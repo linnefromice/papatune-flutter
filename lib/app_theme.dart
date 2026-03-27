@@ -1,15 +1,21 @@
 import 'package:flutter/material.dart';
 
 class AppTheme {
-  static ThemeData get light {
+  static const _seedColor = Color(0xFF2E7D6F);
+
+  static ThemeData get light => _buildTheme(Brightness.light);
+  static ThemeData get dark => _buildTheme(Brightness.dark);
+
+  static ThemeData _buildTheme(Brightness brightness) {
     final colorScheme = ColorScheme.fromSeed(
-      seedColor: const Color(0xFF2E7D6F),
-      brightness: Brightness.light,
+      seedColor: _seedColor,
+      brightness: brightness,
     );
 
     return ThemeData(
       useMaterial3: true,
       colorScheme: colorScheme,
+      brightness: brightness,
       textTheme: const TextTheme(
         headlineLarge: TextStyle(fontSize: 28, fontWeight: FontWeight.bold),
         headlineMedium: TextStyle(fontSize: 22, fontWeight: FontWeight.w600),
