@@ -12,6 +12,6 @@ void main() {
 
     await tester.pumpWidget(PapetuneApp(storage: storage));
 
-    expect(find.text('お子さんの情報'), findsOneWidget);
+    expect(find.text('お子さんの年齢を教えてください'), findsOneWidget);
   });
 }
