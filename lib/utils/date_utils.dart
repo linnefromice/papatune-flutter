@@ -3,5 +3,5 @@ extension DateFormatting on DateTime {
       '$year-${month.toString().padLeft(2, '0')}-${day.toString().padLeft(2, '0')}';
 
   bool isWithinLast(Duration duration) =>
-      isAfter(DateTime.now().subtract(duration));
+      toUtc().isAfter(DateTime.now().toUtc().subtract(duration));
 }
