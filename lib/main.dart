@@ -35,8 +35,12 @@ class PapetuneApp extends StatelessWidget {
         ChangeNotifierProvider(
           create: (_) => DisruptionProvider(storage),
         ),
-        ChangeNotifierProvider(
+        ChangeNotifierProxyProvider<DisruptionProvider, ConditionProvider>(
           create: (_) => ConditionProvider(),
+          update: (_, disruptions, condition) {
+            condition!.update(disruptions.logs);
+            return condition;
+          },
         ),
         ChangeNotifierProvider(
           create: (_) => PlanProvider(storage),

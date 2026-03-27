@@ -15,7 +15,12 @@ class ConditionProvider extends ChangeNotifier {
   ConditionScore get score => _score;
 
   void update(List<DisruptionLog> recentLogs) {
-    _score = _calculator.calculate(recentLogs);
+    final newScore = _calculator.calculate(recentLogs);
+    if (newScore.value == _score.value &&
+        newScore.recommendedMode == _score.recommendedMode) {
+      return;
+    }
+    _score = newScore;
     notifyListeners();
   }
 }

@@ -21,22 +21,6 @@ class DashboardScreen extends StatefulWidget {
 class _DashboardScreenState extends State<DashboardScreen> {
   int _currentIndex = 0;
 
-  @override
-  void initState() {
-    super.initState();
-    WidgetsBinding.instance.addPostFrameCallback((_) => _refreshPlan());
-  }
-
-  void _refreshPlan() {
-    final profile = context.read<ProfileProvider>().profile;
-    if (profile == null) return;
-
-    final disruptions = context.read<DisruptionProvider>();
-    final condition = context.read<ConditionProvider>();
-    condition.update(disruptions.logs);
-    context.read<PlanProvider>().generateTodayPlan(profile, condition.score);
-  }
-
   void _onDisruptionTap(DisruptionType type) {
     context.read<DisruptionProvider>().addDisruption(DisruptionLog(type: type));
 
@@ -46,19 +30,30 @@ class _DashboardScreenState extends State<DashboardScreen> {
         duration: const Duration(seconds: 2),
       ),
     );
-
-    _refreshPlan();
   }
 
   @override
   Widget build(BuildContext context) {
+    // ConditionProvider は ProxyProvider 経由で DisruptionProvider の
+    // 変更を自動検知するため、watch するだけでリアクティブに更新される
+    final profile = context.watch<ProfileProvider>().profile;
+    final condition = context.watch<ConditionProvider>().score;
+
+    if (profile != null) {
+      // build 内で他 Provider の状態を変更するため、
+      // フレーム終了後に実行して無限ループを防ぐ
+      WidgetsBinding.instance.addPostFrameCallback((_) {
+        if (!mounted) return;
+        context.read<PlanProvider>().generateTodayPlan(profile, condition);
+      });
+    }
+
     return Scaffold(
       body: IndexedStack(
         index: _currentIndex,
         children: [
           DashboardHomePage(
             onDisruptionTap: _onDisruptionTap,
-            onRefresh: _refreshPlan,
           ),
           const ReviewPage(),
           const SettingsPage(),
