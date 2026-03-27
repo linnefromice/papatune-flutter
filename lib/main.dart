@@ -3,6 +3,7 @@ import 'package:provider/provider.dart';
 import 'package:shared_preferences/shared_preferences.dart';
 
 import 'app_theme.dart';
+import 'providers/advice_provider.dart';
 import 'providers/condition_provider.dart';
 import 'providers/disruption_provider.dart';
 import 'providers/plan_provider.dart';
@@ -40,6 +41,9 @@ class PapetuneApp extends StatelessWidget {
         ),
         ChangeNotifierProvider(
           create: (_) => PlanProvider(storage),
+        ),
+        ChangeNotifierProvider(
+          create: (_) => AdviceProvider(),
         ),
       ],
       child: MaterialApp(

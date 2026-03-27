@@ -3,10 +3,12 @@ import 'package:provider/provider.dart';
 
 import '../../enums/disruption_type.dart';
 import '../../models/disruption_log.dart';
+import '../../providers/advice_provider.dart';
 import '../../providers/condition_provider.dart';
 import '../../providers/disruption_provider.dart';
 import '../../providers/plan_provider.dart';
 import '../../providers/profile_provider.dart';
+import 'pages/advice_page.dart';
 import 'pages/dashboard_home_page.dart';
 import 'pages/review_page.dart';
 import 'pages/settings_page.dart';
@@ -35,6 +37,13 @@ class _DashboardScreenState extends State<DashboardScreen> {
     final condition = context.read<ConditionProvider>();
     condition.update(disruptions.logs);
     context.read<PlanProvider>().generateTodayPlan(profile, condition.score);
+
+    // Generate daily advice from all 5 optimization services
+    context.read<AdviceProvider>().generateAdvice(
+          profile: profile,
+          condition: condition.score,
+          recentLogs: disruptions.logs,
+        );
   }
 
   void _onDisruptionTap(DisruptionType type) {
@@ -60,6 +69,7 @@ class _DashboardScreenState extends State<DashboardScreen> {
             onDisruptionTap: _onDisruptionTap,
             onRefresh: _refreshPlan,
           ),
+          const AdvicePage(),
           const ReviewPage(),
           const SettingsPage(),
         ],
@@ -69,6 +79,8 @@ class _DashboardScreenState extends State<DashboardScreen> {
         onDestinationSelected: (i) => setState(() => _currentIndex = i),
         destinations: const [
           NavigationDestination(icon: Icon(Icons.dashboard), label: '今日'),
+          NavigationDestination(
+              icon: Icon(Icons.psychology), label: '最適化'),
           NavigationDestination(icon: Icon(Icons.analytics), label: '振り返り'),
           NavigationDestination(icon: Icon(Icons.settings), label: '設定'),
         ],
