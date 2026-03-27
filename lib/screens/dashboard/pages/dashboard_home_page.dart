@@ -5,6 +5,7 @@ import '../../../enums/disruption_type.dart';
 import '../../../providers/condition_provider.dart';
 import '../../../providers/disruption_provider.dart';
 import '../../../providers/plan_provider.dart';
+import '../../../providers/profile_provider.dart';
 import '../../../services/coach_message_service.dart';
 import '../widgets/coach_message_card.dart';
 import '../widgets/condition_score_card.dart';
@@ -30,8 +31,12 @@ class DashboardHomePage extends StatelessWidget {
     final condition = context.watch<ConditionProvider>().score;
     final plan = context.watch<PlanProvider>().todayPlan;
     final disruptions = context.watch<DisruptionProvider>();
-    final coachMessage =
-        _coachService.getMessage(condition, disruptions.logs);
+    final profile = context.watch<ProfileProvider>().profile;
+    final coachMessage = _coachService.getMessage(
+      condition,
+      disruptions.logs,
+      profile: profile,
+    );
 
     return SafeArea(
       child: RefreshIndicator(
