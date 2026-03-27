@@ -38,8 +38,9 @@ class PlanProvider extends ChangeNotifier {
 
   void toggleTask(String taskId) {
     if (_todayPlan == null) return;
-    final task = _todayPlan!.tasks.firstWhere((t) => t.id == taskId);
-    task.isDone = !task.isDone;
+    final idx = _todayPlan!.tasks.indexWhere((t) => t.id == taskId);
+    if (idx == -1) return;
+    _todayPlan!.tasks[idx].isDone = !_todayPlan!.tasks[idx].isDone;
     _storage.savePlans(_plans);
     notifyListeners();
   }
