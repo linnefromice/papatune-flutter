@@ -14,13 +14,11 @@ import '../widgets/task_list_view.dart';
 
 class DashboardHomePage extends StatelessWidget {
   final void Function(DisruptionType) onDisruptionTap;
-  final VoidCallback onRefresh;
   final CoachMessageService _coachService;
 
   DashboardHomePage({
     super.key,
     required this.onDisruptionTap,
-    required this.onRefresh,
     CoachMessageService? coachService,
   }) : _coachService = coachService ?? CoachMessageService();
 
@@ -34,34 +32,31 @@ class DashboardHomePage extends StatelessWidget {
         _coachService.getMessage(condition, disruptions.logs);
 
     return SafeArea(
-      child: RefreshIndicator(
-        onRefresh: () async => onRefresh(),
-        child: ListView(
-          padding: const EdgeInsets.all(16),
-          children: [
-            Text('Papetune', style: theme.textTheme.headlineLarge),
-            const SizedBox(height: 4),
-            Text('Chaos-Resilient Dad OS',
-                style: theme.textTheme.bodyMedium
-                    ?.copyWith(color: theme.colorScheme.onSurfaceVariant)),
-            const SizedBox(height: 20),
-            if (plan != null) PlanModeIndicator(mode: plan.mode),
-            const SizedBox(height: 12),
-            ConditionScoreCard(score: condition),
-            const SizedBox(height: 12),
-            CoachMessageCard(message: coachMessage),
-            const SizedBox(height: 16),
-            Text('クイック入力', style: theme.textTheme.titleLarge),
+      child: ListView(
+        padding: const EdgeInsets.all(16),
+        children: [
+          Text('Papetune', style: theme.textTheme.headlineLarge),
+          const SizedBox(height: 4),
+          Text('Chaos-Resilient Dad OS',
+              style: theme.textTheme.bodyMedium
+                  ?.copyWith(color: theme.colorScheme.onSurfaceVariant)),
+          const SizedBox(height: 20),
+          if (plan != null) PlanModeIndicator(mode: plan.mode),
+          const SizedBox(height: 12),
+          ConditionScoreCard(score: condition),
+          const SizedBox(height: 12),
+          CoachMessageCard(message: coachMessage),
+          const SizedBox(height: 16),
+          Text('クイック入力', style: theme.textTheme.titleLarge),
+          const SizedBox(height: 8),
+          QuickInputBar(onTap: onDisruptionTap),
+          const SizedBox(height: 16),
+          if (plan != null) ...[
+            Text('今日のプラン', style: theme.textTheme.titleLarge),
             const SizedBox(height: 8),
-            QuickInputBar(onTap: onDisruptionTap),
-            const SizedBox(height: 16),
-            if (plan != null) ...[
-              Text('今日のプラン', style: theme.textTheme.titleLarge),
-              const SizedBox(height: 8),
-              TaskListView(plan: plan),
-            ],
+            TaskListView(plan: plan),
           ],
-        ),
+        ],
       ),
     );
   }
