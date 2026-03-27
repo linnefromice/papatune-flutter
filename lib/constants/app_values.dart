@@ -1,7 +1,7 @@
 class AppValues {
   AppValues._();
 
-  static const int onboardingPageCount = 1;
+  static const int onboardingPageCount = 3;
   static const int reviewPeriodDays = 7;
   static const int maxHistoryDays = 30;
 
