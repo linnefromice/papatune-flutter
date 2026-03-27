@@ -49,6 +49,8 @@ class PapetuneApp extends StatelessWidget {
       child: MaterialApp(
         title: 'Papetune',
         theme: AppTheme.light,
+        darkTheme: AppTheme.dark,
+        themeMode: ThemeMode.system,
         debugShowCheckedModeBanner: false,
         initialRoute: '/',
         routes: {
