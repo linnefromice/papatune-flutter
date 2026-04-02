@@ -3,11 +3,17 @@ import 'package:flutter/services.dart';
 import 'package:provider/provider.dart';
 
 import '../../constants/app_values.dart';
+import '../../constants/task_templates.dart';
 import '../../enums/household_duty.dart';
+import '../../enums/plan_mode.dart';
 import '../../enums/work_style.dart';
 import '../../models/child_profile.dart';
 import '../../models/dad_profile.dart';
+import '../../models/daily_plan.dart';
+import '../../models/plan_task.dart';
+import '../../providers/plan_provider.dart';
 import '../../providers/profile_provider.dart';
+import 'pages/plan_template_page.dart';
 
 class OnboardingScreen extends StatefulWidget {
   const OnboardingScreen({super.key});
@@ -29,6 +35,10 @@ class _OnboardingScreenState extends State<OnboardingScreen> {
   // Step 3: Duties & Sport days
   final Set<HouseholdDuty> _duties = {};
   final Set<int> _sportDays = {};
+
+  // Step 4 & 5: Plan templates (collected via callbacks)
+  List<PlanTask>? _weekdayTasks;
+  List<PlanTask>? _weekendTasks;
 
   @override
   void dispose() {
@@ -90,6 +100,16 @@ class _OnboardingScreenState extends State<OnboardingScreen> {
     );
   }
 
+  void _onWeekdayConfirmed(List<PlanTask> tasks) {
+    _weekdayTasks = tasks;
+    _nextPage();
+  }
+
+  void _onWeekendConfirmed(List<PlanTask> tasks) {
+    _weekendTasks = tasks;
+    _save();
+  }
+
   Future<void> _save() async {
     final children = <ChildProfile>[];
     for (int i = 0; i < _childEntries.length; i++) {
@@ -108,6 +128,33 @@ class _OnboardingScreenState extends State<OnboardingScreen> {
     );
 
     await context.read<ProfileProvider>().saveProfile(profile);
+
+    if (!mounted) return;
+
+    final planProvider = context.read<PlanProvider>();
+
+    // Save both templates
+    if (_weekdayTasks != null) {
+      await planProvider.saveWeekdayTemplate(_weekdayTasks!);
+    }
+    if (_weekendTasks != null) {
+      await planProvider.saveWeekendTemplate(_weekendTasks!);
+    }
+
+    // Set today's plan based on current day of week
+    final now = DateTime.now();
+    final isWeekend =
+        now.weekday == DateTime.saturday || now.weekday == DateTime.sunday;
+    final todayTasks = isWeekend ? _weekendTasks : _weekdayTasks;
+
+    if (todayTasks != null) {
+      final todayPlan = DailyPlan(
+        date: now,
+        mode: PlanMode.planA,
+        tasks: todayTasks.map((t) => PlanTask(title: t.title)).toList(),
+      );
+      planProvider.setTodayPlan(todayPlan);
+    }
 
     if (mounted) {
       Navigator.of(context).pushReplacementNamed('/dashboard');
@@ -145,33 +192,38 @@ class _OnboardingScreenState extends State<OnboardingScreen> {
                   _buildChildrenPage(theme),
                   _buildWorkStylePage(theme),
                   _buildDutiesAndSportPage(theme),
+                  PlanTemplatePage(
+                    label: '平日',
+                    defaultTasks: TaskTemplates.weekdayDefaults,
+                    onConfirm: _onWeekdayConfirmed,
+                  ),
+                  PlanTemplatePage(
+                    label: '休日',
+                    defaultTasks: TaskTemplates.weekendDefaults,
+                    onConfirm: _onWeekendConfirmed,
+                  ),
                 ],
               ),
             ),
-            // Navigation buttons
-            Padding(
-              padding: const EdgeInsets.fromLTRB(24, 0, 24, 24),
-              child: Row(
-                children: [
-                  if (_currentPage > 0)
-                    TextButton(
-                      onPressed: _previousPage,
-                      child: const Text('戻る'),
-                    ),
-                  const Spacer(),
-                  if (_currentPage < AppValues.onboardingPageCount - 1)
+            // Navigation buttons (pages 0-2 use shared nav, pages 3-4 have their own confirm)
+            if (_currentPage < 3)
+              Padding(
+                padding: const EdgeInsets.fromLTRB(24, 0, 24, 24),
+                child: Row(
+                  children: [
+                    if (_currentPage > 0)
+                      TextButton(
+                        onPressed: _previousPage,
+                        child: const Text('戻る'),
+                      ),
+                    const Spacer(),
                     FilledButton(
                       onPressed: _nextPage,
                       child: const Text('次へ'),
-                    )
-                  else
-                    FilledButton(
-                      onPressed: _save,
-                      child: const Text('始める！'),
                     ),
-                ],
+                  ],
+                ),
               ),
-            ),
           ],
         ),
       ),
@@ -274,11 +326,13 @@ class _OnboardingScreenState extends State<OnboardingScreen> {
             groupValue: _workStyle,
             onChanged: (v) => setState(() => _workStyle = v!),
             child: Column(
-              children: WorkStyle.values.map((style) => ListTile(
-                    title: Text(style.label),
-                    leading: Radio<WorkStyle>(value: style),
-                    onTap: () => setState(() => _workStyle = style),
-                  )).toList(),
+              children: WorkStyle.values
+                  .map((style) => ListTile(
+                        title: Text(style.label),
+                        leading: Radio<WorkStyle>(value: style),
+                        onTap: () => setState(() => _workStyle = style),
+                      ))
+                  .toList(),
             ),
           ),
         ],
@@ -334,7 +388,9 @@ class _OnboardingScreenState extends State<OnboardingScreen> {
                 label: Text(entry.value),
                 selected: selected,
                 onSelected: (v) => setState(() {
-                  v ? _sportDays.add(entry.key) : _sportDays.remove(entry.key);
+                  v
+                      ? _sportDays.add(entry.key)
+                      : _sportDays.remove(entry.key);
                 }),
               );
             }).toList(),
