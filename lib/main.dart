@@ -15,6 +15,7 @@ void main() async {
   WidgetsFlutterBinding.ensureInitialized();
   final prefs = await SharedPreferences.getInstance();
   final storage = StorageService(prefs);
+  await storage.migrateTemplatesIfNeeded();
 
   runApp(PapetuneApp(storage: storage));
 }

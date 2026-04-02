@@ -8,6 +8,8 @@ class PlanTemplatePage extends StatefulWidget {
   final List<String> defaultTasks;
   final String confirmButtonText;
   final void Function(List<PlanTask> tasks) onConfirm;
+  final String? skipButtonText;
+  final VoidCallback? onSkip;
 
   const PlanTemplatePage({
     super.key,
@@ -15,6 +17,8 @@ class PlanTemplatePage extends StatefulWidget {
     required this.defaultTasks,
     this.confirmButtonText = '次へ',
     required this.onConfirm,
+    this.skipButtonText,
+    this.onSkip,
   });
 
   @override
@@ -266,6 +270,16 @@ class _PlanTemplatePageState extends State<PlanTemplatePage> {
               child: Text(widget.confirmButtonText),
             ),
           ),
+          if (widget.onSkip != null) ...[
+            const SizedBox(height: 8),
+            SizedBox(
+              width: double.infinity,
+              child: TextButton(
+                onPressed: widget.onSkip,
+                child: Text(widget.skipButtonText ?? 'スキップ'),
+              ),
+            ),
+          ],
         ],
       ),
     );

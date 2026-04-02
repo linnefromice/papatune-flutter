@@ -11,6 +11,7 @@ import '../../models/child_profile.dart';
 import '../../models/dad_profile.dart';
 import '../../models/daily_plan.dart';
 import '../../models/plan_task.dart';
+import '../../models/plan_template.dart';
 import '../../providers/plan_provider.dart';
 import '../../providers/profile_provider.dart';
 import 'pages/plan_template_page.dart';
@@ -110,6 +111,11 @@ class _OnboardingScreenState extends State<OnboardingScreen> {
     _save();
   }
 
+  void _onWeekendSkipped() {
+    _weekendTasks = null;
+    _save();
+  }
+
   Future<void> _save() async {
     final children = <ChildProfile>[];
     for (int i = 0; i < _childEntries.length; i++) {
@@ -133,25 +139,44 @@ class _OnboardingScreenState extends State<OnboardingScreen> {
 
     final planProvider = context.read<PlanProvider>();
 
-    // Save both templates
-    if (_weekdayTasks != null) {
-      await planProvider.saveWeekdayTemplate(_weekdayTasks!);
-    }
-    if (_weekendTasks != null) {
-      await planProvider.saveWeekendTemplate(_weekendTasks!);
+    // Create named templates and day assignment
+    final weekdayTemplate = PlanTemplate(
+      name: '平日',
+      tasks: _weekdayTasks!.map((t) => t.title).toList(),
+    );
+    await planProvider.addTemplate(weekdayTemplate);
+
+    final assignment = <int, String>{};
+    for (int d = 1; d <= 5; d++) {
+      assignment[d] = weekdayTemplate.id;
     }
 
-    // Set today's plan based on current day of week
+    if (_weekendTasks != null && _weekendTasks!.isNotEmpty) {
+      final weekendTemplate = PlanTemplate(
+        name: '休日',
+        tasks: _weekendTasks!.map((t) => t.title).toList(),
+      );
+      await planProvider.addTemplate(weekendTemplate);
+      for (int d = 6; d <= 7; d++) {
+        assignment[d] = weekendTemplate.id;
+      }
+    } else {
+      // スキップ時は平日テンプレートを全曜日に適用
+      for (int d = 6; d <= 7; d++) {
+        assignment[d] = weekdayTemplate.id;
+      }
+    }
+
+    await planProvider.saveDayAssignment(assignment);
+
+    // Set today's plan
     final now = DateTime.now();
-    final isWeekend =
-        now.weekday == DateTime.saturday || now.weekday == DateTime.sunday;
-    final todayTasks = isWeekend ? _weekendTasks : _weekdayTasks;
-
-    if (todayTasks != null) {
+    final todayTemplate = planProvider.getTemplateForDay(now.weekday);
+    if (todayTemplate != null) {
       final todayPlan = DailyPlan(
         date: now,
         mode: PlanMode.planA,
-        tasks: todayTasks.map((t) => PlanTask(title: t.title)).toList(),
+        tasks: todayTemplate.tasks.map((t) => PlanTask(title: t)).toList(),
       );
       planProvider.setTodayPlan(todayPlan);
     }
@@ -203,6 +228,8 @@ class _OnboardingScreenState extends State<OnboardingScreen> {
                     defaultTasks: TaskTemplates.weekendDefaults,
                     confirmButtonText: 'このプランで始める！',
                     onConfirm: _onWeekendConfirmed,
+                    skipButtonText: 'スキップして始める',
+                    onSkip: _onWeekendSkipped,
                   ),
                 ],
               ),

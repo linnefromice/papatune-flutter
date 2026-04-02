@@ -2,7 +2,10 @@ import 'package:flutter/material.dart';
 import 'package:provider/provider.dart';
 
 import '../../../models/dad_profile.dart';
+import '../../../providers/plan_provider.dart';
 import '../../../providers/profile_provider.dart';
+import '../../settings/day_assignment_screen.dart';
+import '../../settings/template_list_screen.dart';
 
 class SettingsPage extends StatelessWidget {
   const SettingsPage({super.key});
@@ -20,6 +23,8 @@ class SettingsPage extends StatelessWidget {
           const SizedBox(height: 16),
           if (profile != null) ...[
             _ProfileCard(profile: profile),
+            const SizedBox(height: 16),
+            _TemplateManagementCard(),
             const SizedBox(height: 16),
             _ResetButton(),
           ],
@@ -74,6 +79,49 @@ class _ProfileRow extends StatelessWidget {
     return Padding(
       padding: const EdgeInsets.symmetric(vertical: 2),
       child: Text('$label: $value'),
+    );
+  }
+}
+
+class _TemplateManagementCard extends StatelessWidget {
+  @override
+  Widget build(BuildContext context) {
+    final theme = Theme.of(context);
+    final templateCount = context.watch<PlanProvider>().templates.length;
+
+    return Card(
+      child: Padding(
+        padding: const EdgeInsets.all(20),
+        child: Column(
+          crossAxisAlignment: CrossAxisAlignment.start,
+          children: [
+            Text('テンプレート管理', style: theme.textTheme.titleLarge),
+            const SizedBox(height: 12),
+            ListTile(
+              leading: const Icon(Icons.list_alt),
+              title: const Text('テンプレート一覧'),
+              subtitle: Text('$templateCount 件'),
+              trailing: const Icon(Icons.chevron_right),
+              onTap: () => Navigator.push(
+                context,
+                MaterialPageRoute(
+                    builder: (_) => const TemplateListScreen()),
+              ),
+            ),
+            const Divider(height: 1),
+            ListTile(
+              leading: const Icon(Icons.calendar_today),
+              title: const Text('曜日の割り当て'),
+              trailing: const Icon(Icons.chevron_right),
+              onTap: () => Navigator.push(
+                context,
+                MaterialPageRoute(
+                    builder: (_) => const DayAssignmentScreen()),
+              ),
+            ),
+          ],
+        ),
+      ),
     );
   }
 }

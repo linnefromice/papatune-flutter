@@ -7,6 +7,7 @@ import 'package:papetune/models/condition_score.dart';
 import 'package:papetune/models/dad_profile.dart';
 import 'package:papetune/models/daily_plan.dart';
 import 'package:papetune/models/plan_task.dart';
+import 'package:papetune/models/plan_template.dart';
 import 'package:papetune/providers/plan_provider.dart';
 import 'package:papetune/services/storage_service.dart';
 import 'package:shared_preferences/shared_preferences.dart';
@@ -144,16 +145,18 @@ void main() {
       );
     });
 
-    test('saveWeekdayTemplate persists template', () async {
-      final tasks = [PlanTask(title: 'タスク1'), PlanTask(title: 'タスク2')];
-      await provider.saveWeekdayTemplate(tasks);
-      expect(provider.weekdayTemplate, ['タスク1', 'タスク2']);
+    test('addTemplate persists template', () async {
+      final template = PlanTemplate(name: '平日', tasks: ['タスク1', 'タスク2']);
+      await provider.addTemplate(template);
+      expect(provider.templates.length, 1);
+      expect(provider.templates.first.name, '平日');
     });
 
-    test('saveWeekendTemplate persists template', () async {
-      final tasks = [PlanTask(title: '週末タスク')];
-      await provider.saveWeekendTemplate(tasks);
-      expect(provider.weekendTemplate, ['週末タスク']);
+    test('saveDayAssignment persists assignment', () async {
+      final template = PlanTemplate(name: '平日', tasks: ['タスク1']);
+      await provider.addTemplate(template);
+      await provider.saveDayAssignment({1: template.id});
+      expect(provider.dayAssignment[1], template.id);
     });
   });
 }
