@@ -10,6 +10,7 @@ class PlanTemplatePage extends StatefulWidget {
   final void Function(List<PlanTask> tasks) onConfirm;
   final String? skipButtonText;
   final VoidCallback? onSkip;
+  final bool showHeader;
 
   const PlanTemplatePage({
     super.key,
@@ -19,6 +20,7 @@ class PlanTemplatePage extends StatefulWidget {
     required this.onConfirm,
     this.skipButtonText,
     this.onSkip,
+    this.showHeader = true,
   });
 
   @override
@@ -197,20 +199,25 @@ class _PlanTemplatePageState extends State<PlanTemplatePage> {
   Widget build(BuildContext context) {
     final theme = Theme.of(context);
     return Padding(
-      padding: const EdgeInsets.symmetric(horizontal: 24),
+      padding: widget.showHeader
+          ? const EdgeInsets.symmetric(horizontal: 24)
+          : EdgeInsets.zero,
       child: Column(
         crossAxisAlignment: CrossAxisAlignment.start,
         children: [
-          const SizedBox(height: 32),
-          Text('${widget.label}のプラン', style: theme.textTheme.headlineLarge),
-          const SizedBox(height: 8),
-          Text(
-            'テンプレートを自分用にカスタマイズしてください',
-            style: theme.textTheme.bodyLarge?.copyWith(
-              color: theme.colorScheme.onSurfaceVariant,
+          if (widget.showHeader) ...[
+            const SizedBox(height: 32),
+            Text('${widget.label}のプラン',
+                style: theme.textTheme.headlineLarge),
+            const SizedBox(height: 8),
+            Text(
+              'テンプレートを自分用にカスタマイズしてください',
+              style: theme.textTheme.bodyLarge?.copyWith(
+                color: theme.colorScheme.onSurfaceVariant,
+              ),
             ),
-          ),
-          const SizedBox(height: 24),
+            const SizedBox(height: 24),
+          ],
           Expanded(
             child: ReorderableListView.builder(
               itemCount: _tasks.length,

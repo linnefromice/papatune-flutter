@@ -1,6 +1,7 @@
 import 'package:flutter/material.dart';
 import 'package:provider/provider.dart';
 
+import '../../constants/app_values.dart';
 import '../../models/plan_template.dart';
 import '../../providers/plan_provider.dart';
 import 'template_edit_screen.dart';
@@ -28,11 +29,19 @@ class TemplateListScreen extends StatelessWidget {
               itemCount: templates.length,
               itemBuilder: (context, index) {
                 final template = templates[index];
+                final assignedDays = planProvider.dayAssignment.entries
+                    .where((e) => e.value == template.id)
+                    .map((e) => AppValues.weekdayLabels[e.key]!)
+                    .toList();
+                final daysLabel = assignedDays.isEmpty
+                    ? '未割り当て'
+                    : '${assignedDays.join("・")} / ${template.tasks.length} タスク';
+
                 return Card(
                   margin: const EdgeInsets.only(bottom: 8),
                   child: ListTile(
                     title: Text(template.name),
-                    subtitle: Text('${template.tasks.length} タスク'),
+                    subtitle: Text(daysLabel),
                     trailing: const Icon(Icons.chevron_right),
                     onTap: () => _openEdit(context, template),
                   ),

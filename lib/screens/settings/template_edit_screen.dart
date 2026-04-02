@@ -117,9 +117,8 @@ class _TemplateEditScreenState extends State<TemplateEditScreen> {
             Expanded(
               child: PlanTemplatePage(
                 key: ValueKey(widget.template?.id ?? 'new'),
-                label: _nameController.text.isEmpty
-                    ? 'テンプレート'
-                    : _nameController.text,
+                label: '',
+                showHeader: false,
                 defaultTasks: widget.template?.tasks ??
                     TaskTemplates.weekdayDefaults,
                 confirmButtonText: '保存',

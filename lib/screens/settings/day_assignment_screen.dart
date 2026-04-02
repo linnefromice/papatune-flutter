@@ -49,7 +49,12 @@ class _DayAssignmentScreenState extends State<DayAssignmentScreen> {
               itemBuilder: (context, index) {
                 final weekday = index + 1; // 1=Mon, 7=Sun
                 final dayLabel = AppValues.weekdayLabels[weekday]!;
-                final selectedId = _assignment[weekday];
+                // 存在しないテンプレートIDの場合は未設定に戻す
+                final rawId = _assignment[weekday];
+                final selectedId = (rawId != null &&
+                        templates.any((t) => t.id == rawId))
+                    ? rawId
+                    : null;
 
                 return Card(
                   margin: const EdgeInsets.only(bottom: 8),
