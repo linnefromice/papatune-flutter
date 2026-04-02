@@ -13,6 +13,8 @@ class StorageService {
   static const _profileKey = 'papetune_profile';
   static const _disruptionsKey = 'papetune_disruptions';
   static const _plansKey = 'papetune_daily_plans';
+  static const _weekdayTemplateKey = 'papetune_weekday_template';
+  static const _weekendTemplateKey = 'papetune_weekend_template';
 
   StorageService(this._prefs);
 
@@ -68,6 +70,27 @@ class StorageService {
     );
     await _prefs.setString(_plansKey,
         jsonEncode(filtered.map((k, v) => MapEntry(k, v.toJson()))));
+  }
+
+  // Plan Templates
+  List<String>? loadWeekdayTemplate() {
+    final json = _prefs.getString(_weekdayTemplateKey);
+    if (json == null) return null;
+    return (jsonDecode(json) as List).cast<String>();
+  }
+
+  List<String>? loadWeekendTemplate() {
+    final json = _prefs.getString(_weekendTemplateKey);
+    if (json == null) return null;
+    return (jsonDecode(json) as List).cast<String>();
+  }
+
+  Future<void> saveWeekdayTemplate(List<String> tasks) async {
+    await _prefs.setString(_weekdayTemplateKey, jsonEncode(tasks));
+  }
+
+  Future<void> saveWeekendTemplate(List<String> tasks) async {
+    await _prefs.setString(_weekendTemplateKey, jsonEncode(tasks));
   }
 
   List<T> _pruneByDays<T>(
