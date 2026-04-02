@@ -6,12 +6,14 @@ import '../../../models/plan_task.dart';
 class PlanTemplatePage extends StatefulWidget {
   final String label;
   final List<String> defaultTasks;
+  final String confirmButtonText;
   final void Function(List<PlanTask> tasks) onConfirm;
 
   const PlanTemplatePage({
     super.key,
     required this.label,
     required this.defaultTasks,
+    this.confirmButtonText = '次へ',
     required this.onConfirm,
   });
 
@@ -114,6 +116,16 @@ class _PlanTemplatePageState extends State<PlanTemplatePage> {
               onPressed: _showAddFromCatalog,
               icon: const Icon(Icons.add),
               label: const Text('タスクを追加'),
+            ),
+          ),
+          const SizedBox(height: 12),
+          SizedBox(
+            width: double.infinity,
+            child: FilledButton(
+              onPressed: _tasks.isEmpty
+                  ? null
+                  : () => widget.onConfirm(List.of(_tasks)),
+              child: Text(widget.confirmButtonText),
             ),
           ),
         ],
