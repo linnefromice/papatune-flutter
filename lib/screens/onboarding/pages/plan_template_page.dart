@@ -57,7 +57,7 @@ class _PlanTemplatePageState extends State<PlanTemplatePage> {
         expand: false,
         builder: (context, scrollController) => _TaskCatalogSheet(
           scrollController: scrollController,
-          existingTitles: _tasks.map((t) => t.title).toSet(),
+          initialExistingTitles: _tasks.map((t) => t.title).toSet(),
           onAdd: (title) {
             setState(() {
               _tasks.add(PlanTask(title: title));
@@ -134,16 +134,29 @@ class _PlanTemplatePageState extends State<PlanTemplatePage> {
   }
 }
 
-class _TaskCatalogSheet extends StatelessWidget {
+class _TaskCatalogSheet extends StatefulWidget {
   final ScrollController scrollController;
-  final Set<String> existingTitles;
+  final Set<String> initialExistingTitles;
   final void Function(String title) onAdd;
 
   const _TaskCatalogSheet({
     required this.scrollController,
-    required this.existingTitles,
+    required this.initialExistingTitles,
     required this.onAdd,
   });
+
+  @override
+  State<_TaskCatalogSheet> createState() => _TaskCatalogSheetState();
+}
+
+class _TaskCatalogSheetState extends State<_TaskCatalogSheet> {
+  late final Set<String> _addedTitles;
+
+  @override
+  void initState() {
+    super.initState();
+    _addedTitles = Set.of(widget.initialExistingTitles);
+  }
 
   @override
   Widget build(BuildContext context) {
@@ -156,9 +169,9 @@ class _TaskCatalogSheet extends StatelessWidget {
             children: [
               Text('タスクを選択', style: theme.textTheme.titleLarge),
               const Spacer(),
-              IconButton(
+              FilledButton(
                 onPressed: () => Navigator.pop(context),
-                icon: const Icon(Icons.close),
+                child: const Text('完了'),
               ),
             ],
           ),
@@ -166,7 +179,7 @@ class _TaskCatalogSheet extends StatelessWidget {
         const Divider(height: 1),
         Expanded(
           child: ListView.builder(
-            controller: scrollController,
+            controller: widget.scrollController,
             itemCount: TaskTemplates.categories.length,
             itemBuilder: (context, catIndex) {
               final category = TaskTemplates.categories[catIndex];
@@ -191,7 +204,7 @@ class _TaskCatalogSheet extends StatelessWidget {
                     spacing: 8,
                     runSpacing: 4,
                     children: category.tasks.map((task) {
-                      final alreadyAdded = existingTitles.contains(task);
+                      final alreadyAdded = _addedTitles.contains(task);
                       return Padding(
                         padding: const EdgeInsets.symmetric(horizontal: 8),
                         child: ActionChip(
@@ -204,8 +217,10 @@ class _TaskCatalogSheet extends StatelessWidget {
                           onPressed: alreadyAdded
                               ? null
                               : () {
-                                  onAdd(task);
-                                  Navigator.pop(context);
+                                  widget.onAdd(task);
+                                  setState(() {
+                                    _addedTitles.add(task);
+                                  });
                                 },
                         ),
                       );
