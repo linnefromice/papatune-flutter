@@ -38,14 +38,33 @@ class _PlanTemplatePageState extends State<PlanTemplatePage> {
     });
   }
 
-  void _showDurationPicker(int index) {
+  void _showTimePicker(int index) {
     final task = _tasks[index];
-    int selected = task.durationMinutes ?? 30;
+    // Parse existing timeSlot or default to 08:00
+    int hour = 8;
+    int minute = 0;
+    if (task.timeSlot != null) {
+      final parts = task.timeSlot!.split(':');
+      hour = int.parse(parts[0]);
+      minute = int.parse(parts[1]);
+    }
 
     showModalBottomSheet(
       context: context,
       builder: (context) => StatefulBuilder(
         builder: (context, setSheetState) {
+          final timeLabel =
+              '${hour.toString().padLeft(2, '0')}:${minute.toString().padLeft(2, '0')}';
+
+          void addMinutes(int delta) {
+            setSheetState(() {
+              var total = hour * 60 + minute + delta;
+              total = total.clamp(0, 23 * 60 + 50);
+              hour = total ~/ 60;
+              minute = total % 60;
+            });
+          }
+
           return Padding(
             padding: const EdgeInsets.all(24),
             child: Column(
@@ -58,21 +77,21 @@ class _PlanTemplatePageState extends State<PlanTemplatePage> {
                   mainAxisAlignment: MainAxisAlignment.center,
                   children: [
                     IconButton.outlined(
-                      onPressed: selected > 10
-                          ? () => setSheetState(() => selected -= 10)
+                      onPressed: (hour > 0 || minute > 0)
+                          ? () => addMinutes(-10)
                           : null,
                       icon: const Icon(Icons.remove),
                     ),
                     Padding(
                       padding: const EdgeInsets.symmetric(horizontal: 24),
                       child: Text(
-                        '$selected分',
+                        timeLabel,
                         style: Theme.of(context).textTheme.headlineMedium,
                       ),
                     ),
                     IconButton.outlined(
-                      onPressed: selected < 480
-                          ? () => setSheetState(() => selected += 10)
+                      onPressed: (hour < 23 || minute < 50)
+                          ? () => addMinutes(10)
                           : null,
                       icon: const Icon(Icons.add),
                     ),
@@ -81,11 +100,18 @@ class _PlanTemplatePageState extends State<PlanTemplatePage> {
                 const SizedBox(height: 8),
                 Wrap(
                   spacing: 8,
-                  children: [10, 20, 30, 60, 90, 120].map((m) {
+                  children: ['06:00', '07:00', '08:00', '12:00', '18:00', '21:00']
+                      .map((t) {
                     return ChoiceChip(
-                      label: Text('$m分'),
-                      selected: selected == m,
-                      onSelected: (_) => setSheetState(() => selected = m),
+                      label: Text(t),
+                      selected: timeLabel == t,
+                      onSelected: (_) {
+                        final parts = t.split(':');
+                        setSheetState(() {
+                          hour = int.parse(parts[0]);
+                          minute = int.parse(parts[1]);
+                        });
+                      },
                     );
                   }).toList(),
                 ),
@@ -99,12 +125,12 @@ class _PlanTemplatePageState extends State<PlanTemplatePage> {
                             _tasks[index] = PlanTask(
                               id: task.id,
                               title: task.title,
-                              durationMinutes: null,
+                              timeSlot: null,
                             );
                           });
                           Navigator.pop(context);
                         },
-                        child: const Text('時間なし'),
+                        child: const Text('時刻なし'),
                       ),
                     ),
                     const SizedBox(width: 12),
@@ -115,7 +141,7 @@ class _PlanTemplatePageState extends State<PlanTemplatePage> {
                             _tasks[index] = PlanTask(
                               id: task.id,
                               title: task.title,
-                              durationMinutes: selected,
+                              timeSlot: timeLabel,
                             );
                           });
                           Navigator.pop(context);
@@ -194,18 +220,18 @@ class _PlanTemplatePageState extends State<PlanTemplatePage> {
                     leading: Icon(Icons.drag_handle,
                         color: theme.colorScheme.onSurfaceVariant),
                     title: Text(task.title),
-                    subtitle: task.durationLabel != null
-                        ? Text(task.durationLabel!,
+                    subtitle: task.timeSlot != null
+                        ? Text(task.timeSlot!,
                             style: theme.textTheme.bodySmall?.copyWith(
                               color: theme.colorScheme.primary,
                             ))
                         : null,
-                    onTap: () => _showDurationPicker(index),
+                    onTap: () => _showTimePicker(index),
                     trailing: Row(
                       mainAxisSize: MainAxisSize.min,
                       children: [
-                        Icon(Icons.timer_outlined, size: 16,
-                            color: task.durationMinutes != null
+                        Icon(Icons.schedule, size: 16,
+                            color: task.timeSlot != null
                                 ? theme.colorScheme.primary
                                 : theme.colorScheme.outlineVariant),
                         const SizedBox(width: 8),
