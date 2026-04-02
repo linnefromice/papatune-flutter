@@ -38,6 +38,101 @@ class _PlanTemplatePageState extends State<PlanTemplatePage> {
     });
   }
 
+  void _showDurationPicker(int index) {
+    final task = _tasks[index];
+    int selected = task.durationMinutes ?? 30;
+
+    showModalBottomSheet(
+      context: context,
+      builder: (context) => StatefulBuilder(
+        builder: (context, setSheetState) {
+          return Padding(
+            padding: const EdgeInsets.all(24),
+            child: Column(
+              mainAxisSize: MainAxisSize.min,
+              children: [
+                Text(task.title,
+                    style: Theme.of(context).textTheme.titleMedium),
+                const SizedBox(height: 16),
+                Row(
+                  mainAxisAlignment: MainAxisAlignment.center,
+                  children: [
+                    IconButton.outlined(
+                      onPressed: selected > 10
+                          ? () => setSheetState(() => selected -= 10)
+                          : null,
+                      icon: const Icon(Icons.remove),
+                    ),
+                    Padding(
+                      padding: const EdgeInsets.symmetric(horizontal: 24),
+                      child: Text(
+                        '$selected分',
+                        style: Theme.of(context).textTheme.headlineMedium,
+                      ),
+                    ),
+                    IconButton.outlined(
+                      onPressed: selected < 480
+                          ? () => setSheetState(() => selected += 10)
+                          : null,
+                      icon: const Icon(Icons.add),
+                    ),
+                  ],
+                ),
+                const SizedBox(height: 8),
+                Wrap(
+                  spacing: 8,
+                  children: [10, 20, 30, 60, 90, 120].map((m) {
+                    return ChoiceChip(
+                      label: Text('$m分'),
+                      selected: selected == m,
+                      onSelected: (_) => setSheetState(() => selected = m),
+                    );
+                  }).toList(),
+                ),
+                const SizedBox(height: 16),
+                Row(
+                  children: [
+                    Expanded(
+                      child: OutlinedButton(
+                        onPressed: () {
+                          setState(() {
+                            _tasks[index] = PlanTask(
+                              id: task.id,
+                              title: task.title,
+                              durationMinutes: null,
+                            );
+                          });
+                          Navigator.pop(context);
+                        },
+                        child: const Text('時間なし'),
+                      ),
+                    ),
+                    const SizedBox(width: 12),
+                    Expanded(
+                      child: FilledButton(
+                        onPressed: () {
+                          setState(() {
+                            _tasks[index] = PlanTask(
+                              id: task.id,
+                              title: task.title,
+                              durationMinutes: selected,
+                            );
+                          });
+                          Navigator.pop(context);
+                        },
+                        child: const Text('設定'),
+                      ),
+                    ),
+                  ],
+                ),
+              ],
+            ),
+          );
+        },
+      ),
+    );
+  }
+
   void _onReorder(int oldIndex, int newIndex) {
     setState(() {
       if (newIndex > oldIndex) newIndex--;
@@ -99,10 +194,27 @@ class _PlanTemplatePageState extends State<PlanTemplatePage> {
                     leading: Icon(Icons.drag_handle,
                         color: theme.colorScheme.onSurfaceVariant),
                     title: Text(task.title),
-                    trailing: IconButton(
-                      onPressed: () => _removeTask(index),
-                      icon: Icon(Icons.close,
-                          color: theme.colorScheme.error, size: 20),
+                    subtitle: task.durationLabel != null
+                        ? Text(task.durationLabel!,
+                            style: theme.textTheme.bodySmall?.copyWith(
+                              color: theme.colorScheme.primary,
+                            ))
+                        : null,
+                    onTap: () => _showDurationPicker(index),
+                    trailing: Row(
+                      mainAxisSize: MainAxisSize.min,
+                      children: [
+                        Icon(Icons.timer_outlined, size: 16,
+                            color: task.durationMinutes != null
+                                ? theme.colorScheme.primary
+                                : theme.colorScheme.outlineVariant),
+                        const SizedBox(width: 8),
+                        IconButton(
+                          onPressed: () => _removeTask(index),
+                          icon: Icon(Icons.close,
+                              color: theme.colorScheme.error, size: 20),
+                        ),
+                      ],
                     ),
                   ),
                 );

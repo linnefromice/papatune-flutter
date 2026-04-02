@@ -58,8 +58,11 @@ class TaskListView extends StatelessWidget {
                         : null,
                   ),
                 ),
-                subtitle: task.timeSlot != null
-                    ? Text(task.timeSlot!)
+                subtitle: (task.timeSlot != null || task.durationLabel != null)
+                    ? Text([
+                        if (task.timeSlot != null) task.timeSlot!,
+                        if (task.durationLabel != null) task.durationLabel!,
+                      ].join(' / '))
                     : null,
                 trailing: task.isOptional
                     ? Chip(
