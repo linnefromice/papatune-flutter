@@ -6,7 +6,11 @@ import '../models/disruption_log.dart';
 import '../services/condition_calculator.dart';
 
 class ConditionProvider extends ChangeNotifier {
-  final ConditionCalculator _calculator = ConditionCalculator();
+  final ConditionCalculator _calculator;
+
+  ConditionProvider({ConditionCalculator? calculator})
+      : _calculator = calculator ?? ConditionCalculator();
+
   ConditionScore _score = ConditionScore(
     value: 100,
     recommendedMode: PlanMode.planA,

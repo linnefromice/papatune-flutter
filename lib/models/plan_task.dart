@@ -6,7 +6,7 @@ class PlanTask {
   final String? timeSlot;
   final int? durationMinutes;
   final bool isOptional;
-  bool isDone;
+  final bool isDone;
 
   PlanTask({
     String? id,
@@ -16,6 +16,15 @@ class PlanTask {
     this.isOptional = false,
     this.isDone = false,
   }) : id = id ?? const Uuid().v4();
+
+  PlanTask copyWith({bool? isDone}) => PlanTask(
+        id: id,
+        title: title,
+        timeSlot: timeSlot,
+        durationMinutes: durationMinutes,
+        isOptional: isOptional,
+        isDone: isDone ?? this.isDone,
+      );
 
   String? get durationLabel {
     if (durationMinutes == null) return null;

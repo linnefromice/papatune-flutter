@@ -15,6 +15,9 @@ class DailyPlan {
 
   String get dateKey => date.toDateKey();
 
+  DailyPlan copyWithTasks(List<PlanTask> tasks) =>
+      DailyPlan(date: date, mode: mode, tasks: tasks);
+
   int get completedCount => tasks.where((t) => t.isDone).length;
   int get totalCount => tasks.length;
 

@@ -10,13 +10,14 @@ import '../utils/date_utils.dart';
 
 class PlanProvider extends ChangeNotifier {
   final StorageService _storage;
-  final PlanGenerator _generator = PlanGenerator();
+  final PlanGenerator _generator;
   Map<String, DailyPlan> _plans = {};
   DailyPlan? _todayPlan;
   List<String>? _weekdayTemplate;
   List<String>? _weekendTemplate;
 
-  PlanProvider(this._storage) {
+  PlanProvider(this._storage, {PlanGenerator? generator})
+      : _generator = generator ?? PlanGenerator() {
     _plans = _storage.loadPlans();
     _weekdayTemplate = _storage.loadWeekdayTemplate();
     _weekendTemplate = _storage.loadWeekendTemplate();
@@ -65,7 +66,12 @@ class PlanProvider extends ChangeNotifier {
     if (_todayPlan == null) return;
     final idx = _todayPlan!.tasks.indexWhere((t) => t.id == taskId);
     if (idx == -1) return;
-    _todayPlan!.tasks[idx].isDone = !_todayPlan!.tasks[idx].isDone;
+    final updatedTasks = List<PlanTask>.from(_todayPlan!.tasks);
+    updatedTasks[idx] = updatedTasks[idx].copyWith(
+      isDone: !updatedTasks[idx].isDone,
+    );
+    _todayPlan = _todayPlan!.copyWithTasks(updatedTasks);
+    _plans[_todayPlan!.dateKey] = _todayPlan!;
     _storage.savePlans(_plans);
     notifyListeners();
   }
