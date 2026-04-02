@@ -38,7 +38,22 @@ class PlanProvider extends ChangeNotifier {
       return;
     }
 
-    _todayPlan = _generator.generate(profile, condition.recommendedMode, today);
+    // テンプレートがあればそこからプランを生成
+    final isWeekend = today.weekday == DateTime.saturday ||
+        today.weekday == DateTime.sunday;
+    final template = isWeekend ? _weekendTemplate : _weekdayTemplate;
+
+    if (template != null && template.isNotEmpty) {
+      _todayPlan = DailyPlan(
+        date: today,
+        mode: condition.recommendedMode,
+        tasks: template.map((t) => PlanTask(title: t)).toList(),
+      );
+    } else {
+      _todayPlan =
+          _generator.generate(profile, condition.recommendedMode, today);
+    }
+
     _plans[key] = _todayPlan!;
     _storage.savePlans(_plans);
     notifyListeners();
