@@ -6,12 +6,14 @@ import '../../../models/plan_task.dart';
 class PlanTemplatePage extends StatefulWidget {
   final String label;
   final List<String> defaultTasks;
+  final String confirmButtonText;
   final void Function(List<PlanTask> tasks) onConfirm;
 
   const PlanTemplatePage({
     super.key,
     required this.label,
     required this.defaultTasks,
+    this.confirmButtonText = '次へ',
     required this.onConfirm,
   });
 
@@ -36,6 +38,101 @@ class _PlanTemplatePageState extends State<PlanTemplatePage> {
     });
   }
 
+  void _showDurationPicker(int index) {
+    final task = _tasks[index];
+    int selected = task.durationMinutes ?? 30;
+
+    showModalBottomSheet(
+      context: context,
+      builder: (context) => StatefulBuilder(
+        builder: (context, setSheetState) {
+          return Padding(
+            padding: const EdgeInsets.all(24),
+            child: Column(
+              mainAxisSize: MainAxisSize.min,
+              children: [
+                Text(task.title,
+                    style: Theme.of(context).textTheme.titleMedium),
+                const SizedBox(height: 16),
+                Row(
+                  mainAxisAlignment: MainAxisAlignment.center,
+                  children: [
+                    IconButton.outlined(
+                      onPressed: selected > 10
+                          ? () => setSheetState(() => selected -= 10)
+                          : null,
+                      icon: const Icon(Icons.remove),
+                    ),
+                    Padding(
+                      padding: const EdgeInsets.symmetric(horizontal: 24),
+                      child: Text(
+                        '$selected分',
+                        style: Theme.of(context).textTheme.headlineMedium,
+                      ),
+                    ),
+                    IconButton.outlined(
+                      onPressed: selected < 480
+                          ? () => setSheetState(() => selected += 10)
+                          : null,
+                      icon: const Icon(Icons.add),
+                    ),
+                  ],
+                ),
+                const SizedBox(height: 8),
+                Wrap(
+                  spacing: 8,
+                  children: [10, 20, 30, 60, 90, 120].map((m) {
+                    return ChoiceChip(
+                      label: Text('$m分'),
+                      selected: selected == m,
+                      onSelected: (_) => setSheetState(() => selected = m),
+                    );
+                  }).toList(),
+                ),
+                const SizedBox(height: 16),
+                Row(
+                  children: [
+                    Expanded(
+                      child: OutlinedButton(
+                        onPressed: () {
+                          setState(() {
+                            _tasks[index] = PlanTask(
+                              id: task.id,
+                              title: task.title,
+                              durationMinutes: null,
+                            );
+                          });
+                          Navigator.pop(context);
+                        },
+                        child: const Text('時間なし'),
+                      ),
+                    ),
+                    const SizedBox(width: 12),
+                    Expanded(
+                      child: FilledButton(
+                        onPressed: () {
+                          setState(() {
+                            _tasks[index] = PlanTask(
+                              id: task.id,
+                              title: task.title,
+                              durationMinutes: selected,
+                            );
+                          });
+                          Navigator.pop(context);
+                        },
+                        child: const Text('設定'),
+                      ),
+                    ),
+                  ],
+                ),
+              ],
+            ),
+          );
+        },
+      ),
+    );
+  }
+
   void _onReorder(int oldIndex, int newIndex) {
     setState(() {
       if (newIndex > oldIndex) newIndex--;
@@ -55,7 +152,7 @@ class _PlanTemplatePageState extends State<PlanTemplatePage> {
         expand: false,
         builder: (context, scrollController) => _TaskCatalogSheet(
           scrollController: scrollController,
-          existingTitles: _tasks.map((t) => t.title).toSet(),
+          initialExistingTitles: _tasks.map((t) => t.title).toSet(),
           onAdd: (title) {
             setState(() {
               _tasks.add(PlanTask(title: title));
@@ -97,10 +194,27 @@ class _PlanTemplatePageState extends State<PlanTemplatePage> {
                     leading: Icon(Icons.drag_handle,
                         color: theme.colorScheme.onSurfaceVariant),
                     title: Text(task.title),
-                    trailing: IconButton(
-                      onPressed: () => _removeTask(index),
-                      icon: Icon(Icons.close,
-                          color: theme.colorScheme.error, size: 20),
+                    subtitle: task.durationLabel != null
+                        ? Text(task.durationLabel!,
+                            style: theme.textTheme.bodySmall?.copyWith(
+                              color: theme.colorScheme.primary,
+                            ))
+                        : null,
+                    onTap: () => _showDurationPicker(index),
+                    trailing: Row(
+                      mainAxisSize: MainAxisSize.min,
+                      children: [
+                        Icon(Icons.timer_outlined, size: 16,
+                            color: task.durationMinutes != null
+                                ? theme.colorScheme.primary
+                                : theme.colorScheme.outlineVariant),
+                        const SizedBox(width: 8),
+                        IconButton(
+                          onPressed: () => _removeTask(index),
+                          icon: Icon(Icons.close,
+                              color: theme.colorScheme.error, size: 20),
+                        ),
+                      ],
                     ),
                   ),
                 );
@@ -116,22 +230,45 @@ class _PlanTemplatePageState extends State<PlanTemplatePage> {
               label: const Text('タスクを追加'),
             ),
           ),
+          const SizedBox(height: 12),
+          SizedBox(
+            width: double.infinity,
+            child: FilledButton(
+              onPressed: _tasks.isEmpty
+                  ? null
+                  : () => widget.onConfirm(List.of(_tasks)),
+              child: Text(widget.confirmButtonText),
+            ),
+          ),
         ],
       ),
     );
   }
 }
 
-class _TaskCatalogSheet extends StatelessWidget {
+class _TaskCatalogSheet extends StatefulWidget {
   final ScrollController scrollController;
-  final Set<String> existingTitles;
+  final Set<String> initialExistingTitles;
   final void Function(String title) onAdd;
 
   const _TaskCatalogSheet({
     required this.scrollController,
-    required this.existingTitles,
+    required this.initialExistingTitles,
     required this.onAdd,
   });
+
+  @override
+  State<_TaskCatalogSheet> createState() => _TaskCatalogSheetState();
+}
+
+class _TaskCatalogSheetState extends State<_TaskCatalogSheet> {
+  late final Set<String> _addedTitles;
+
+  @override
+  void initState() {
+    super.initState();
+    _addedTitles = Set.of(widget.initialExistingTitles);
+  }
 
   @override
   Widget build(BuildContext context) {
@@ -144,9 +281,9 @@ class _TaskCatalogSheet extends StatelessWidget {
             children: [
               Text('タスクを選択', style: theme.textTheme.titleLarge),
               const Spacer(),
-              IconButton(
+              FilledButton(
                 onPressed: () => Navigator.pop(context),
-                icon: const Icon(Icons.close),
+                child: const Text('完了'),
               ),
             ],
           ),
@@ -154,7 +291,7 @@ class _TaskCatalogSheet extends StatelessWidget {
         const Divider(height: 1),
         Expanded(
           child: ListView.builder(
-            controller: scrollController,
+            controller: widget.scrollController,
             itemCount: TaskTemplates.categories.length,
             itemBuilder: (context, catIndex) {
               final category = TaskTemplates.categories[catIndex];
@@ -179,7 +316,7 @@ class _TaskCatalogSheet extends StatelessWidget {
                     spacing: 8,
                     runSpacing: 4,
                     children: category.tasks.map((task) {
-                      final alreadyAdded = existingTitles.contains(task);
+                      final alreadyAdded = _addedTitles.contains(task);
                       return Padding(
                         padding: const EdgeInsets.symmetric(horizontal: 8),
                         child: ActionChip(
@@ -192,8 +329,10 @@ class _TaskCatalogSheet extends StatelessWidget {
                           onPressed: alreadyAdded
                               ? null
                               : () {
-                                  onAdd(task);
-                                  Navigator.pop(context);
+                                  widget.onAdd(task);
+                                  setState(() {
+                                    _addedTitles.add(task);
+                                  });
                                 },
                         ),
                       );

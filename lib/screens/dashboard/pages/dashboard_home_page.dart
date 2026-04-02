@@ -1,7 +1,9 @@
 import 'package:flutter/material.dart';
+import 'package:intl/intl.dart';
 import 'package:provider/provider.dart';
 
 import '../../../enums/disruption_type.dart';
+import '../../../models/disruption_log.dart';
 import '../../../providers/condition_provider.dart';
 import '../../../providers/disruption_provider.dart';
 import '../../../providers/plan_provider.dart';
@@ -14,11 +16,13 @@ import '../widgets/task_list_view.dart';
 
 class DashboardHomePage extends StatelessWidget {
   final void Function(DisruptionType) onDisruptionTap;
+  final void Function(String id) onDisruptionRemove;
   final CoachMessageService _coachService;
 
   DashboardHomePage({
     super.key,
     required this.onDisruptionTap,
+    required this.onDisruptionRemove,
     CoachMessageService? coachService,
   }) : _coachService = coachService ?? CoachMessageService();
 
@@ -50,6 +54,13 @@ class DashboardHomePage extends StatelessWidget {
           Text('クイック入力', style: theme.textTheme.titleLarge),
           const SizedBox(height: 8),
           QuickInputBar(onTap: onDisruptionTap),
+          if (disruptions.last24hLogs.isNotEmpty) ...[
+            const SizedBox(height: 16),
+            _RecentDisruptionsSection(
+              logs: disruptions.last24hLogs,
+              onRemove: onDisruptionRemove,
+            ),
+          ],
           const SizedBox(height: 16),
           if (plan != null) ...[
             Text('今日のプラン', style: theme.textTheme.titleLarge),
@@ -58,6 +69,63 @@ class DashboardHomePage extends StatelessWidget {
           ],
         ],
       ),
+    );
+  }
+}
+
+class _RecentDisruptionsSection extends StatelessWidget {
+  final List<DisruptionLog> logs;
+  final void Function(String id) onRemove;
+
+  const _RecentDisruptionsSection({
+    required this.logs,
+    required this.onRemove,
+  });
+
+  @override
+  Widget build(BuildContext context) {
+    final theme = Theme.of(context);
+    final timeFormat = DateFormat('HH:mm');
+    // 新しい順に表示
+    final sorted = List.of(logs)
+      ..sort((a, b) => b.timestamp.compareTo(a.timestamp));
+
+    return Column(
+      crossAxisAlignment: CrossAxisAlignment.start,
+      children: [
+        Text('直近の記録', style: theme.textTheme.titleSmall?.copyWith(
+          color: theme.colorScheme.onSurfaceVariant,
+        )),
+        const SizedBox(height: 8),
+        ...sorted.map((log) => Dismissible(
+              key: ValueKey(log.id),
+              direction: DismissDirection.endToStart,
+              background: Container(
+                alignment: Alignment.centerRight,
+                padding: const EdgeInsets.only(right: 16),
+                color: theme.colorScheme.error,
+                child: Icon(Icons.delete_outline,
+                    color: theme.colorScheme.onError),
+              ),
+              onDismissed: (_) => onRemove(log.id),
+              child: Card(
+                margin: const EdgeInsets.only(bottom: 4),
+                child: ListTile(
+                  dense: true,
+                  leading: Icon(log.type.icon, size: 20,
+                      color: theme.colorScheme.error),
+                  title: Text(log.type.label,
+                      style: theme.textTheme.bodyMedium),
+                  subtitle: Text(timeFormat.format(log.timestamp),
+                      style: theme.textTheme.bodySmall),
+                  trailing: Text('-${log.type.impactScore}',
+                      style: theme.textTheme.labelLarge?.copyWith(
+                        color: theme.colorScheme.error,
+                      )),
+                ),
+              ),
+            )),
+      ],
     );
   }
 }

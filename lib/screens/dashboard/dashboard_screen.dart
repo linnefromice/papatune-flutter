@@ -22,12 +22,32 @@ class _DashboardScreenState extends State<DashboardScreen> {
   int _currentIndex = 0;
 
   void _onDisruptionTap(DisruptionType type) {
-    context.read<DisruptionProvider>().addDisruption(DisruptionLog(type: type));
+    final log = DisruptionLog(type: type);
+    context.read<DisruptionProvider>().addDisruption(log);
 
+    ScaffoldMessenger.of(context).clearSnackBars();
     ScaffoldMessenger.of(context).showSnackBar(
       SnackBar(
         content: Text('${type.label} を記録しました'),
-        duration: const Duration(seconds: 2),
+        duration: const Duration(seconds: 4),
+        action: SnackBarAction(
+          label: '取り消し',
+          onPressed: () {
+            context.read<DisruptionProvider>().removeDisruption(log.id);
+          },
+        ),
+      ),
+    );
+  }
+
+  void _onDisruptionRemove(String id) {
+    context.read<DisruptionProvider>().removeDisruption(id);
+
+    ScaffoldMessenger.of(context).clearSnackBars();
+    ScaffoldMessenger.of(context).showSnackBar(
+      const SnackBar(
+        content: Text('記録を削除しました'),
+        duration: Duration(seconds: 2),
       ),
     );
   }
@@ -54,6 +74,7 @@ class _DashboardScreenState extends State<DashboardScreen> {
         children: [
           DashboardHomePage(
             onDisruptionTap: _onDisruptionTap,
+            onDisruptionRemove: _onDisruptionRemove,
           ),
           const ReviewPage(),
           const SettingsPage(),

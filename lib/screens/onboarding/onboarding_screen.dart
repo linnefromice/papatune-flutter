@@ -195,11 +195,13 @@ class _OnboardingScreenState extends State<OnboardingScreen> {
                   PlanTemplatePage(
                     label: '平日',
                     defaultTasks: TaskTemplates.weekdayDefaults,
+                    confirmButtonText: '次へ：休日プラン',
                     onConfirm: _onWeekdayConfirmed,
                   ),
                   PlanTemplatePage(
                     label: '休日',
                     defaultTasks: TaskTemplates.weekendDefaults,
+                    confirmButtonText: 'このプランで始める！',
                     onConfirm: _onWeekendConfirmed,
                   ),
                 ],
