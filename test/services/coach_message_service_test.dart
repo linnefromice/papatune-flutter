@@ -1,3 +1,5 @@
+import 'dart:math';
+
 import 'package:flutter_test/flutter_test.dart';
 import 'package:papetune/constants/app_values.dart';
 import 'package:papetune/enums/disruption_type.dart';
@@ -10,7 +12,8 @@ void main() {
   late CoachMessageService service;
 
   setUp(() {
-    service = CoachMessageService();
+    // Seeded Random for deterministic tests
+    service = CoachMessageService(random: Random(42));
   });
 
   ConditionScore makeScore(int value, PlanMode mode) =>
@@ -98,16 +101,23 @@ void main() {
         expect(message, isNotEmpty);
       });
 
-      test('mode messages are non-deterministic (random)', () {
+      test('mode messages are non-deterministic with unseeded random', () {
+        final unseeded = CoachMessageService();
         final score = makeScore(70, PlanMode.planA);
         final logs = [makeLog(DisruptionType.tantrum)];
-        // Run multiple times and collect unique messages
         final messages = <String>{};
         for (var i = 0; i < 50; i++) {
-          messages.add(service.getMessage(score, logs));
+          messages.add(unseeded.getMessage(score, logs));
         }
-        // With 4 messages and 50 tries, extremely unlikely to get only 1
         expect(messages.length, greaterThan(1));
+      });
+
+      test('seeded random produces consistent results', () {
+        final a = CoachMessageService(random: Random(0));
+        final b = CoachMessageService(random: Random(0));
+        final score = makeScore(70, PlanMode.planA);
+        final logs = [makeLog(DisruptionType.tantrum)];
+        expect(a.getMessage(score, logs), b.getMessage(score, logs));
       });
     });
   });
