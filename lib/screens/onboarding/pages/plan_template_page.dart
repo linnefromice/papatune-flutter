@@ -6,15 +6,23 @@ import '../../../models/plan_task.dart';
 class PlanTemplatePage extends StatefulWidget {
   final String label;
   final List<String> defaultTasks;
+  final List<PlanTask>? initialPlanTasks;
   final String confirmButtonText;
   final void Function(List<PlanTask> tasks) onConfirm;
+  final String? skipButtonText;
+  final VoidCallback? onSkip;
+  final bool showHeader;
 
   const PlanTemplatePage({
     super.key,
     required this.label,
-    required this.defaultTasks,
+    this.defaultTasks = const [],
+    this.initialPlanTasks,
     this.confirmButtonText = '次へ',
     required this.onConfirm,
+    this.skipButtonText,
+    this.onSkip,
+    this.showHeader = true,
   });
 
   @override
@@ -27,9 +35,13 @@ class _PlanTemplatePageState extends State<PlanTemplatePage> {
   @override
   void initState() {
     super.initState();
-    _tasks = widget.defaultTasks
-        .map((title) => PlanTask(title: title))
-        .toList();
+    _tasks = widget.initialPlanTasks != null
+        ? widget.initialPlanTasks!
+            .map((t) => PlanTask(title: t.title, timeSlot: t.timeSlot))
+            .toList()
+        : widget.defaultTasks
+            .map((title) => PlanTask(title: title))
+            .toList();
   }
 
   void _removeTask(int index) {
@@ -193,20 +205,25 @@ class _PlanTemplatePageState extends State<PlanTemplatePage> {
   Widget build(BuildContext context) {
     final theme = Theme.of(context);
     return Padding(
-      padding: const EdgeInsets.symmetric(horizontal: 24),
+      padding: widget.showHeader
+          ? const EdgeInsets.symmetric(horizontal: 24)
+          : EdgeInsets.zero,
       child: Column(
         crossAxisAlignment: CrossAxisAlignment.start,
         children: [
-          const SizedBox(height: 32),
-          Text('${widget.label}のプラン', style: theme.textTheme.headlineLarge),
-          const SizedBox(height: 8),
-          Text(
-            'テンプレートを自分用にカスタマイズしてください',
-            style: theme.textTheme.bodyLarge?.copyWith(
-              color: theme.colorScheme.onSurfaceVariant,
+          if (widget.showHeader) ...[
+            const SizedBox(height: 32),
+            Text('${widget.label}のプラン',
+                style: theme.textTheme.headlineLarge),
+            const SizedBox(height: 8),
+            Text(
+              'テンプレートを自分用にカスタマイズしてください',
+              style: theme.textTheme.bodyLarge?.copyWith(
+                color: theme.colorScheme.onSurfaceVariant,
+              ),
             ),
-          ),
-          const SizedBox(height: 24),
+            const SizedBox(height: 24),
+          ],
           Expanded(
             child: ReorderableListView.builder(
               itemCount: _tasks.length,
@@ -266,6 +283,16 @@ class _PlanTemplatePageState extends State<PlanTemplatePage> {
               child: Text(widget.confirmButtonText),
             ),
           ),
+          if (widget.onSkip != null) ...[
+            const SizedBox(height: 8),
+            SizedBox(
+              width: double.infinity,
+              child: TextButton(
+                onPressed: widget.onSkip,
+                child: Text(widget.skipButtonText ?? 'スキップ'),
+              ),
+            ),
+          ],
         ],
       ),
     );

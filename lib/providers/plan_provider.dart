@@ -4,6 +4,7 @@ import '../models/condition_score.dart';
 import '../models/dad_profile.dart';
 import '../models/daily_plan.dart';
 import '../models/plan_task.dart';
+import '../models/plan_template.dart';
 import '../services/plan_generator.dart';
 import '../services/storage_service.dart';
 import '../utils/date_utils.dart';
@@ -13,20 +14,30 @@ class PlanProvider extends ChangeNotifier {
   final PlanGenerator _generator;
   Map<String, DailyPlan> _plans = {};
   DailyPlan? _todayPlan;
-  List<String>? _weekdayTemplate;
-  List<String>? _weekendTemplate;
+  List<PlanTemplate> _templates = [];
+  Map<int, String> _dayAssignment = {};
 
   PlanProvider(this._storage, {PlanGenerator? generator})
       : _generator = generator ?? PlanGenerator() {
     _plans = _storage.loadPlans();
-    _weekdayTemplate = _storage.loadWeekdayTemplate();
-    _weekendTemplate = _storage.loadWeekendTemplate();
+    _templates = _storage.loadTemplates();
+    _dayAssignment = _storage.loadDayAssignment();
   }
 
   DailyPlan? get todayPlan => _todayPlan;
   Map<String, DailyPlan> get plans => Map.unmodifiable(_plans);
-  List<String>? get weekdayTemplate => _weekdayTemplate;
-  List<String>? get weekendTemplate => _weekendTemplate;
+  List<PlanTemplate> get templates => List.unmodifiable(_templates);
+  Map<int, String> get dayAssignment => Map.unmodifiable(_dayAssignment);
+
+  PlanTemplate? getTemplateForDay(int weekday) {
+    final id = _dayAssignment[weekday];
+    if (id == null) return null;
+    try {
+      return _templates.firstWhere((t) => t.id == id);
+    } catch (_) {
+      return null;
+    }
+  }
 
   void generateTodayPlan(DadProfile profile, ConditionScore condition) {
     final today = DateTime.now();
@@ -38,16 +49,15 @@ class PlanProvider extends ChangeNotifier {
       return;
     }
 
-    // テンプレートがあればそこからプランを生成
-    final isWeekend = today.weekday == DateTime.saturday ||
-        today.weekday == DateTime.sunday;
-    final template = isWeekend ? _weekendTemplate : _weekdayTemplate;
-
-    if (template != null && template.isNotEmpty) {
+    // テンプレートからプラン生成
+    final template = getTemplateForDay(today.weekday);
+    if (template != null && template.tasks.isNotEmpty) {
       _todayPlan = DailyPlan(
         date: today,
         mode: condition.recommendedMode,
-        tasks: template.map((t) => PlanTask(title: t)).toList(),
+        tasks: template.tasks
+            .map((t) => PlanTask(title: t.title, timeSlot: t.timeSlot))
+            .toList(),
       );
     } else {
       _todayPlan =
@@ -67,14 +77,35 @@ class PlanProvider extends ChangeNotifier {
     notifyListeners();
   }
 
-  Future<void> saveWeekdayTemplate(List<PlanTask> tasks) async {
-    _weekdayTemplate = tasks.map((t) => t.title).toList();
-    await _storage.saveWeekdayTemplate(_weekdayTemplate!);
+  // Template CRUD
+
+  Future<void> addTemplate(PlanTemplate template) async {
+    _templates.add(template);
+    await _storage.saveTemplates(_templates);
+    notifyListeners();
   }
 
-  Future<void> saveWeekendTemplate(List<PlanTask> tasks) async {
-    _weekendTemplate = tasks.map((t) => t.title).toList();
-    await _storage.saveWeekendTemplate(_weekendTemplate!);
+  Future<void> updateTemplate(PlanTemplate template) async {
+    final idx = _templates.indexWhere((t) => t.id == template.id);
+    if (idx == -1) return;
+    _templates[idx] = template;
+    await _storage.saveTemplates(_templates);
+    notifyListeners();
+  }
+
+  Future<void> deleteTemplate(String templateId) async {
+    _templates.removeWhere((t) => t.id == templateId);
+    // 削除されたテンプレートの曜日割り当てをクリア
+    _dayAssignment.removeWhere((_, v) => v == templateId);
+    await _storage.saveTemplates(_templates);
+    await _storage.saveDayAssignment(_dayAssignment);
+    notifyListeners();
+  }
+
+  Future<void> saveDayAssignment(Map<int, String> assignment) async {
+    _dayAssignment = Map.of(assignment);
+    await _storage.saveDayAssignment(_dayAssignment);
+    notifyListeners();
   }
 
   void toggleTask(String taskId) {
