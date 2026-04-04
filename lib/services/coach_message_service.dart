@@ -8,7 +8,9 @@ import '../models/disruption_log.dart';
 import '../utils/date_utils.dart';
 
 class CoachMessageService {
-  final _random = Random();
+  final Random _random;
+
+  CoachMessageService({Random? random}) : _random = random ?? Random();
 
   String getMessage(ConditionScore score, List<DisruptionLog> recentLogs) {
     final contextual = _contextualMessage(recentLogs, score);
