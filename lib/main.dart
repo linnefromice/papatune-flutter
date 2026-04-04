@@ -7,6 +7,7 @@ import 'providers/condition_provider.dart';
 import 'providers/disruption_provider.dart';
 import 'providers/plan_provider.dart';
 import 'providers/profile_provider.dart';
+import 'providers/template_provider.dart';
 import 'screens/dashboard/dashboard_screen.dart';
 import 'screens/onboarding/onboarding_screen.dart';
 import 'services/storage_service.dart';
@@ -36,6 +37,9 @@ class PapetuneApp extends StatelessWidget {
         ChangeNotifierProvider(
           create: (_) => DisruptionProvider(storage),
         ),
+        ChangeNotifierProvider(
+          create: (_) => TemplateProvider(storage),
+        ),
         ChangeNotifierProxyProvider<DisruptionProvider, ConditionProvider>(
           create: (_) => ConditionProvider(),
           update: (_, disruptions, condition) {
@@ -43,8 +47,19 @@ class PapetuneApp extends StatelessWidget {
             return condition;
           },
         ),
-        ChangeNotifierProvider(
-          create: (_) => PlanProvider(storage),
+        ChangeNotifierProxyProvider2<ConditionProvider, TemplateProvider,
+            PlanProvider>(
+          create: (context) => PlanProvider(
+            storage,
+            context.read<TemplateProvider>(),
+          ),
+          update: (context, condition, template, planProvider) {
+            final profile = context.read<ProfileProvider>().profile;
+            if (profile != null) {
+              planProvider!.generateTodayPlan(profile, condition.score);
+            }
+            return planProvider!;
+          },
         ),
       ],
       child: MaterialApp(

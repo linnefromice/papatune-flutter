@@ -4,7 +4,7 @@ import 'package:provider/provider.dart';
 import '../../constants/task_templates.dart';
 import '../../models/plan_task.dart';
 import '../../models/plan_template.dart';
-import '../../providers/plan_provider.dart';
+import '../../providers/template_provider.dart';
 import '../onboarding/pages/plan_template_page.dart';
 
 class TemplateEditScreen extends StatefulWidget {
@@ -43,7 +43,7 @@ class _TemplateEditScreenState extends State<TemplateEditScreen> {
     if (!_formKey.currentState!.validate()) return;
 
     final name = _nameController.text.trim();
-    final planProvider = context.read<PlanProvider>();
+    final templateProvider = context.read<TemplateProvider>();
 
     final templateTasks = tasks
         .map((t) => TemplateTask(title: t.title, timeSlot: t.timeSlot))
@@ -51,11 +51,11 @@ class _TemplateEditScreenState extends State<TemplateEditScreen> {
 
     if (_isNew) {
       final template = PlanTemplate(name: name, tasks: templateTasks);
-      await planProvider.addTemplate(template);
+      await templateProvider.addTemplate(template);
     } else {
       final updated =
           widget.template!.copyWith(name: name, tasks: templateTasks);
-      await planProvider.updateTemplate(updated);
+      await templateProvider.updateTemplate(updated);
     }
 
     if (mounted) Navigator.pop(context);
@@ -84,7 +84,7 @@ class _TemplateEditScreenState extends State<TemplateEditScreen> {
 
     if (confirmed != true || !mounted) return;
 
-    await context.read<PlanProvider>().deleteTemplate(widget.template!.id);
+    await context.read<TemplateProvider>().deleteTemplate(widget.template!.id);
     if (mounted) Navigator.pop(context);
   }
 

@@ -2,7 +2,7 @@ import 'package:flutter/material.dart';
 import 'package:provider/provider.dart';
 
 import '../../../models/dad_profile.dart';
-import '../../../providers/plan_provider.dart';
+import '../../../providers/template_provider.dart';
 import '../../../providers/profile_provider.dart';
 import '../../settings/day_assignment_screen.dart';
 import '../../settings/template_list_screen.dart';
@@ -87,7 +87,7 @@ class _TemplateManagementCard extends StatelessWidget {
   @override
   Widget build(BuildContext context) {
     final theme = Theme.of(context);
-    final templateCount = context.watch<PlanProvider>().templates.length;
+    final templateCount = context.watch<TemplateProvider>().templates.length;
 
     return Card(
       child: Padding(

@@ -3,7 +3,7 @@ import 'package:provider/provider.dart';
 
 import '../../constants/app_values.dart';
 import '../../models/plan_template.dart';
-import '../../providers/plan_provider.dart';
+import '../../providers/template_provider.dart';
 
 class DayAssignmentScreen extends StatefulWidget {
   const DayAssignmentScreen({super.key});
@@ -18,7 +18,7 @@ class _DayAssignmentScreenState extends State<DayAssignmentScreen> {
   @override
   void initState() {
     super.initState();
-    final current = context.read<PlanProvider>().dayAssignment;
+    final current = context.read<TemplateProvider>().dayAssignment;
     _assignment = {
       for (int d = 1; d <= 7; d++) d: current[d],
     };
@@ -30,14 +30,14 @@ class _DayAssignmentScreenState extends State<DayAssignmentScreen> {
           .where((e) => e.value != null)
           .map((e) => MapEntry(e.key, e.value!)),
     );
-    await context.read<PlanProvider>().saveDayAssignment(filtered);
+    await context.read<TemplateProvider>().saveDayAssignment(filtered);
     if (mounted) Navigator.pop(context);
   }
 
   @override
   Widget build(BuildContext context) {
     final theme = Theme.of(context);
-    final templates = context.watch<PlanProvider>().templates;
+    final templates = context.watch<TemplateProvider>().templates;
 
     return Scaffold(
       appBar: AppBar(title: const Text('曜日の割り当て')),
