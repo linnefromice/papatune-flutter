@@ -2,6 +2,7 @@ import 'package:flutter/material.dart';
 import 'package:provider/provider.dart';
 
 import '../../constants/app_values.dart';
+import '../../models/plan_template.dart';
 import '../../providers/plan_provider.dart';
 
 class DayAssignmentScreen extends StatefulWidget {
@@ -42,6 +43,49 @@ class _DayAssignmentScreenState extends State<DayAssignmentScreen> {
       appBar: AppBar(title: const Text('曜日の割り当て')),
       body: Column(
         children: [
+          if (templates.isNotEmpty)
+            Padding(
+              padding: const EdgeInsets.fromLTRB(16, 16, 16, 0),
+              child: Row(
+                children: [
+                  Expanded(
+                    child: _QuickAssignButton(
+                      label: '平日すべて',
+                      templates: templates,
+                      onAssign: (id) => setState(() {
+                        for (int d = 1; d <= 5; d++) {
+                          _assignment[d] = id;
+                        }
+                      }),
+                    ),
+                  ),
+                  const SizedBox(width: 8),
+                  Expanded(
+                    child: _QuickAssignButton(
+                      label: '休日すべて',
+                      templates: templates,
+                      onAssign: (id) => setState(() {
+                        for (int d = 6; d <= 7; d++) {
+                          _assignment[d] = id;
+                        }
+                      }),
+                    ),
+                  ),
+                  const SizedBox(width: 8),
+                  Expanded(
+                    child: _QuickAssignButton(
+                      label: '全曜日',
+                      templates: templates,
+                      onAssign: (id) => setState(() {
+                        for (int d = 1; d <= 7; d++) {
+                          _assignment[d] = id;
+                        }
+                      }),
+                    ),
+                  ),
+                ],
+              ),
+            ),
           Expanded(
             child: ListView.builder(
               padding: const EdgeInsets.all(16),
@@ -110,6 +154,54 @@ class _DayAssignmentScreenState extends State<DayAssignmentScreen> {
             ),
           ),
         ],
+      ),
+    );
+  }
+}
+
+class _QuickAssignButton extends StatelessWidget {
+  final String label;
+  final List<PlanTemplate> templates;
+  final void Function(String templateId) onAssign;
+
+  const _QuickAssignButton({
+    required this.label,
+    required this.templates,
+    required this.onAssign,
+  });
+
+  @override
+  Widget build(BuildContext context) {
+    return OutlinedButton(
+      onPressed: () => _showPicker(context),
+      style: OutlinedButton.styleFrom(
+        padding: const EdgeInsets.symmetric(horizontal: 8, vertical: 12),
+      ),
+      child: Text(label, style: Theme.of(context).textTheme.labelMedium),
+    );
+  }
+
+  void _showPicker(BuildContext context) {
+    showModalBottomSheet(
+      context: context,
+      builder: (context) => SafeArea(
+        child: Column(
+          mainAxisSize: MainAxisSize.min,
+          children: [
+            Padding(
+              padding: const EdgeInsets.all(16),
+              child: Text('$label に割り当てるテンプレート',
+                  style: Theme.of(context).textTheme.titleMedium),
+            ),
+            ...templates.map((t) => ListTile(
+                  title: Text(t.name),
+                  onTap: () {
+                    onAssign(t.id);
+                    Navigator.pop(context);
+                  },
+                )),
+          ],
+        ),
       ),
     );
   }

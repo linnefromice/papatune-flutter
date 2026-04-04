@@ -55,7 +55,9 @@ class PlanProvider extends ChangeNotifier {
       _todayPlan = DailyPlan(
         date: today,
         mode: condition.recommendedMode,
-        tasks: template.tasks.map((t) => PlanTask(title: t)).toList(),
+        tasks: template.tasks
+            .map((t) => PlanTask(title: t.title, timeSlot: t.timeSlot))
+            .toList(),
       );
     } else {
       _todayPlan =

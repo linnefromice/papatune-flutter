@@ -12,6 +12,7 @@ import '../../models/dad_profile.dart';
 import '../../models/daily_plan.dart';
 import '../../models/plan_task.dart';
 import '../../models/plan_template.dart';
+// TemplateTask is exported from plan_template.dart
 import '../../providers/plan_provider.dart';
 import '../../providers/profile_provider.dart';
 import 'pages/plan_template_page.dart';
@@ -142,7 +143,9 @@ class _OnboardingScreenState extends State<OnboardingScreen> {
     // Create named templates and day assignment
     final weekdayTemplate = PlanTemplate(
       name: '平日',
-      tasks: _weekdayTasks!.map((t) => t.title).toList(),
+      tasks: _weekdayTasks!
+          .map((t) => TemplateTask(title: t.title, timeSlot: t.timeSlot))
+          .toList(),
     );
     await planProvider.addTemplate(weekdayTemplate);
 
@@ -154,7 +157,9 @@ class _OnboardingScreenState extends State<OnboardingScreen> {
     if (_weekendTasks != null && _weekendTasks!.isNotEmpty) {
       final weekendTemplate = PlanTemplate(
         name: '休日',
-        tasks: _weekendTasks!.map((t) => t.title).toList(),
+        tasks: _weekendTasks!
+            .map((t) => TemplateTask(title: t.title, timeSlot: t.timeSlot))
+            .toList(),
       );
       await planProvider.addTemplate(weekendTemplate);
       for (int d = 6; d <= 7; d++) {
@@ -176,7 +181,9 @@ class _OnboardingScreenState extends State<OnboardingScreen> {
       final todayPlan = DailyPlan(
         date: now,
         mode: PlanMode.planA,
-        tasks: todayTemplate.tasks.map((t) => PlanTask(title: t)).toList(),
+        tasks: todayTemplate.tasks
+            .map((t) => PlanTask(title: t.title, timeSlot: t.timeSlot))
+            .toList(),
       );
       planProvider.setTodayPlan(todayPlan);
     }

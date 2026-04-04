@@ -9,8 +9,13 @@ import '../onboarding/pages/plan_template_page.dart';
 
 class TemplateEditScreen extends StatefulWidget {
   final PlanTemplate? template;
+  final bool isDuplicate;
 
-  const TemplateEditScreen({super.key, this.template});
+  const TemplateEditScreen({
+    super.key,
+    this.template,
+    this.isDuplicate = false,
+  });
 
   @override
   State<TemplateEditScreen> createState() => _TemplateEditScreenState();
@@ -19,7 +24,7 @@ class TemplateEditScreen extends StatefulWidget {
 class _TemplateEditScreenState extends State<TemplateEditScreen> {
   late final TextEditingController _nameController;
   final _formKey = GlobalKey<FormState>();
-  bool get _isNew => widget.template == null;
+  bool get _isNew => widget.template == null || widget.isDuplicate;
 
   @override
   void initState() {
@@ -40,17 +45,16 @@ class _TemplateEditScreenState extends State<TemplateEditScreen> {
     final name = _nameController.text.trim();
     final planProvider = context.read<PlanProvider>();
 
+    final templateTasks = tasks
+        .map((t) => TemplateTask(title: t.title, timeSlot: t.timeSlot))
+        .toList();
+
     if (_isNew) {
-      final template = PlanTemplate(
-        name: name,
-        tasks: tasks.map((t) => t.title).toList(),
-      );
+      final template = PlanTemplate(name: name, tasks: templateTasks);
       await planProvider.addTemplate(template);
     } else {
-      final updated = widget.template!.copyWith(
-        name: name,
-        tasks: tasks.map((t) => t.title).toList(),
-      );
+      final updated =
+          widget.template!.copyWith(name: name, tasks: templateTasks);
       await planProvider.updateTemplate(updated);
     }
 
@@ -115,15 +119,26 @@ class _TemplateEditScreenState extends State<TemplateEditScreen> {
             ),
             const SizedBox(height: 16),
             Expanded(
-              child: PlanTemplatePage(
-                key: ValueKey(widget.template?.id ?? 'new'),
-                label: '',
-                showHeader: false,
-                defaultTasks: widget.template?.tasks ??
-                    TaskTemplates.weekdayDefaults,
-                confirmButtonText: '保存',
-                onConfirm: _onSave,
-              ),
+              child: widget.template != null
+                  ? PlanTemplatePage(
+                      key: ValueKey(widget.template!.id),
+                      label: '',
+                      showHeader: false,
+                      initialPlanTasks: widget.template!.tasks
+                          .map((t) =>
+                              PlanTask(title: t.title, timeSlot: t.timeSlot))
+                          .toList(),
+                      confirmButtonText: '保存',
+                      onConfirm: _onSave,
+                    )
+                  : PlanTemplatePage(
+                      key: const ValueKey('new'),
+                      label: '',
+                      showHeader: false,
+                      defaultTasks: TaskTemplates.weekdayDefaults,
+                      confirmButtonText: '保存',
+                      onConfirm: _onSave,
+                    ),
             ),
           ],
         ),

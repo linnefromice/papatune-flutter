@@ -44,6 +44,8 @@ class TemplateListScreen extends StatelessWidget {
                     subtitle: Text(daysLabel),
                     trailing: const Icon(Icons.chevron_right),
                     onTap: () => _openEdit(context, template),
+                    onLongPress: () =>
+                        _showActions(context, template),
                   ),
                 );
               },
@@ -62,5 +64,74 @@ class TemplateListScreen extends StatelessWidget {
         builder: (_) => TemplateEditScreen(template: template),
       ),
     );
+  }
+
+  void _showActions(BuildContext context, PlanTemplate template) {
+    showModalBottomSheet(
+      context: context,
+      builder: (context) => SafeArea(
+        child: Column(
+          mainAxisSize: MainAxisSize.min,
+          children: [
+            ListTile(
+              leading: const Icon(Icons.copy),
+              title: const Text('複製'),
+              onTap: () {
+                Navigator.pop(context);
+                _duplicate(context, template);
+              },
+            ),
+            ListTile(
+              leading: Icon(Icons.delete_outline,
+                  color: Theme.of(context).colorScheme.error),
+              title: Text('削除',
+                  style: TextStyle(
+                      color: Theme.of(context).colorScheme.error)),
+              onTap: () {
+                Navigator.pop(context);
+                _confirmDelete(context, template);
+              },
+            ),
+          ],
+        ),
+      ),
+    );
+  }
+
+  void _duplicate(BuildContext context, PlanTemplate template) {
+    final copy = PlanTemplate(
+      name: '${template.name}のコピー',
+      tasks: List.of(template.tasks),
+    );
+    Navigator.push(
+      context,
+      MaterialPageRoute(
+        builder: (_) => TemplateEditScreen(template: copy, isDuplicate: true),
+      ),
+    );
+  }
+
+  Future<void> _confirmDelete(
+      BuildContext context, PlanTemplate template) async {
+    final confirmed = await showDialog<bool>(
+      context: context,
+      builder: (ctx) => AlertDialog(
+        title: const Text('テンプレートを削除'),
+        content: const Text('このテンプレートを削除しますか？割り当てられている曜日も解除されます。'),
+        actions: [
+          TextButton(
+            onPressed: () => Navigator.pop(ctx, false),
+            child: const Text('キャンセル'),
+          ),
+          FilledButton(
+            onPressed: () => Navigator.pop(ctx, true),
+            child: const Text('削除'),
+          ),
+        ],
+      ),
+    );
+    if (confirmed == true && context.mounted) {
+      await context.read<PlanProvider>().deleteTemplate(template.id);
+    }
   }
 }

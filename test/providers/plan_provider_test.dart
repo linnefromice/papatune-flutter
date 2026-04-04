@@ -146,14 +146,16 @@ void main() {
     });
 
     test('addTemplate persists template', () async {
-      final template = PlanTemplate(name: '平日', tasks: ['タスク1', 'タスク2']);
+      final template = PlanTemplate.fromTitles(
+          name: '平日', titles: ['タスク1', 'タスク2']);
       await provider.addTemplate(template);
       expect(provider.templates.length, 1);
       expect(provider.templates.first.name, '平日');
     });
 
     test('saveDayAssignment persists assignment', () async {
-      final template = PlanTemplate(name: '平日', tasks: ['タスク1']);
+      final template =
+          PlanTemplate.fromTitles(name: '平日', titles: ['タスク1']);
       await provider.addTemplate(template);
       await provider.saveDayAssignment({1: template.id});
       expect(provider.dayAssignment[1], template.id);

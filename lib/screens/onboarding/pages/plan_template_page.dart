@@ -6,6 +6,7 @@ import '../../../models/plan_task.dart';
 class PlanTemplatePage extends StatefulWidget {
   final String label;
   final List<String> defaultTasks;
+  final List<PlanTask>? initialPlanTasks;
   final String confirmButtonText;
   final void Function(List<PlanTask> tasks) onConfirm;
   final String? skipButtonText;
@@ -15,7 +16,8 @@ class PlanTemplatePage extends StatefulWidget {
   const PlanTemplatePage({
     super.key,
     required this.label,
-    required this.defaultTasks,
+    this.defaultTasks = const [],
+    this.initialPlanTasks,
     this.confirmButtonText = '次へ',
     required this.onConfirm,
     this.skipButtonText,
@@ -33,9 +35,13 @@ class _PlanTemplatePageState extends State<PlanTemplatePage> {
   @override
   void initState() {
     super.initState();
-    _tasks = widget.defaultTasks
-        .map((title) => PlanTask(title: title))
-        .toList();
+    _tasks = widget.initialPlanTasks != null
+        ? widget.initialPlanTasks!
+            .map((t) => PlanTask(title: t.title, timeSlot: t.timeSlot))
+            .toList()
+        : widget.defaultTasks
+            .map((title) => PlanTask(title: title))
+            .toList();
   }
 
   void _removeTask(int index) {

@@ -140,7 +140,7 @@ class StorageService {
     final assignment = <int, String>{};
 
     if (weekday != null && weekday.isNotEmpty) {
-      final t = PlanTemplate(name: '平日', tasks: weekday);
+      final t = PlanTemplate.fromTitles(name: '平日', titles: weekday);
       templates.add(t);
       for (int d = 1; d <= 5; d++) {
         assignment[d] = t.id;
@@ -148,7 +148,7 @@ class StorageService {
     }
 
     if (weekend != null && weekend.isNotEmpty) {
-      final t = PlanTemplate(name: '休日', tasks: weekend);
+      final t = PlanTemplate.fromTitles(name: '休日', titles: weekend);
       templates.add(t);
       for (int d = 6; d <= 7; d++) {
         assignment[d] = t.id;
