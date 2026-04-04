@@ -1,10 +1,27 @@
 import 'package:flutter/material.dart';
 
+import '../../../constants/app_values.dart';
 import '../../../enums/plan_mode.dart';
 
 class PlanModeIndicator extends StatelessWidget {
   final PlanMode mode;
-  const PlanModeIndicator({super.key, required this.mode});
+  final int conditionScore;
+  const PlanModeIndicator({
+    super.key,
+    required this.mode,
+    required this.conditionScore,
+  });
+
+  String get _thresholdHint {
+    switch (mode) {
+      case PlanMode.planA:
+        return 'スコア $conditionScore (${AppValues.conditionPlanAThreshold}以上)';
+      case PlanMode.planB:
+        return 'スコア $conditionScore (${AppValues.conditionPlanBThreshold}~${AppValues.conditionPlanAThreshold - 1})';
+      case PlanMode.planC:
+        return 'スコア $conditionScore (${AppValues.conditionPlanBThreshold}未満)';
+    }
+  }
 
   @override
   Widget build(BuildContext context) {
@@ -49,6 +66,14 @@ class PlanModeIndicator extends StatelessWidget {
                     mode.description,
                     style: TextStyle(
                       color: mode.color.withValues(alpha: 0.8),
+                    ),
+                  ),
+                  const SizedBox(height: 2),
+                  Text(
+                    _thresholdHint,
+                    style: TextStyle(
+                      fontSize: 11,
+                      color: mode.color.withValues(alpha: 0.6),
                     ),
                   ),
                 ],

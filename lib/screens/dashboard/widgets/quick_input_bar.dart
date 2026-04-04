@@ -9,7 +9,7 @@ class QuickInputBar extends StatelessWidget {
   @override
   Widget build(BuildContext context) {
     return SizedBox(
-      height: 90,
+      height: 100,
       child: ListView(
         scrollDirection: Axis.horizontal,
         children: DisruptionType.values.map((type) {
@@ -36,7 +36,7 @@ class _QuickInputChip extends StatelessWidget {
       borderRadius: BorderRadius.circular(16),
       child: Card(
         child: SizedBox(
-          width: 80,
+          width: 84,
           child: Column(
             mainAxisAlignment: MainAxisAlignment.center,
             children: [
@@ -48,6 +48,22 @@ class _QuickInputChip extends StatelessWidget {
                 textAlign: TextAlign.center,
                 maxLines: 2,
                 overflow: TextOverflow.ellipsis,
+              ),
+              const SizedBox(height: 2),
+              Container(
+                padding:
+                    const EdgeInsets.symmetric(horizontal: 6, vertical: 1),
+                decoration: BoxDecoration(
+                  color: theme.colorScheme.errorContainer,
+                  borderRadius: BorderRadius.circular(8),
+                ),
+                child: Text(
+                  '-${type.impactScore}',
+                  style: theme.textTheme.labelSmall?.copyWith(
+                    color: theme.colorScheme.onErrorContainer,
+                    fontWeight: FontWeight.bold,
+                  ),
+                ),
               ),
             ],
           ),
