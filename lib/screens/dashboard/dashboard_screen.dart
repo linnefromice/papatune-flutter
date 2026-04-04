@@ -85,7 +85,7 @@ class _DashboardScreenState extends State<DashboardScreen> {
         onDestinationSelected: (i) => setState(() => _currentIndex = i),
         destinations: const [
           NavigationDestination(icon: Icon(Icons.dashboard), label: '今日'),
-          NavigationDestination(icon: Icon(Icons.analytics), label: '振り返り'),
+          NavigationDestination(icon: Icon(Icons.calendar_month), label: '記録'),
           NavigationDestination(icon: Icon(Icons.settings), label: '設定'),
         ],
       ),
