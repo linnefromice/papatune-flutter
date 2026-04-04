@@ -15,6 +15,7 @@ import '../../models/plan_template.dart';
 // TemplateTask is exported from plan_template.dart
 import '../../providers/plan_provider.dart';
 import '../../providers/profile_provider.dart';
+import '../../providers/template_provider.dart';
 import 'pages/plan_template_page.dart';
 
 class OnboardingScreen extends StatefulWidget {
@@ -138,6 +139,7 @@ class _OnboardingScreenState extends State<OnboardingScreen> {
 
     if (!mounted) return;
 
+    final templateProvider = context.read<TemplateProvider>();
     final planProvider = context.read<PlanProvider>();
 
     // Create named templates and day assignment
@@ -147,7 +149,7 @@ class _OnboardingScreenState extends State<OnboardingScreen> {
           .map((t) => TemplateTask(title: t.title, timeSlot: t.timeSlot))
           .toList(),
     );
-    await planProvider.addTemplate(weekdayTemplate);
+    await templateProvider.addTemplate(weekdayTemplate);
 
     final assignment = <int, String>{};
     for (int d = 1; d <= 5; d++) {
@@ -161,22 +163,21 @@ class _OnboardingScreenState extends State<OnboardingScreen> {
             .map((t) => TemplateTask(title: t.title, timeSlot: t.timeSlot))
             .toList(),
       );
-      await planProvider.addTemplate(weekendTemplate);
+      await templateProvider.addTemplate(weekendTemplate);
       for (int d = 6; d <= 7; d++) {
         assignment[d] = weekendTemplate.id;
       }
     } else {
-      // スキップ時は平日テンプレートを全曜日に適用
       for (int d = 6; d <= 7; d++) {
         assignment[d] = weekdayTemplate.id;
       }
     }
 
-    await planProvider.saveDayAssignment(assignment);
+    await templateProvider.saveDayAssignment(assignment);
 
     // Set today's plan
     final now = DateTime.now();
-    final todayTemplate = planProvider.getTemplateForDay(now.weekday);
+    final todayTemplate = templateProvider.getTemplateForDay(now.weekday);
     if (todayTemplate != null) {
       final todayPlan = DailyPlan(
         date: now,

@@ -3,7 +3,7 @@ import 'package:provider/provider.dart';
 
 import '../../constants/app_values.dart';
 import '../../models/plan_template.dart';
-import '../../providers/plan_provider.dart';
+import '../../providers/template_provider.dart';
 import 'template_edit_screen.dart';
 
 class TemplateListScreen extends StatelessWidget {
@@ -12,8 +12,8 @@ class TemplateListScreen extends StatelessWidget {
   @override
   Widget build(BuildContext context) {
     final theme = Theme.of(context);
-    final planProvider = context.watch<PlanProvider>();
-    final templates = planProvider.templates;
+    final templateProvider = context.watch<TemplateProvider>();
+    final templates = templateProvider.templates;
 
     return Scaffold(
       appBar: AppBar(title: const Text('テンプレート一覧')),
@@ -29,7 +29,7 @@ class TemplateListScreen extends StatelessWidget {
               itemCount: templates.length,
               itemBuilder: (context, index) {
                 final template = templates[index];
-                final assignedDays = planProvider.dayAssignment.entries
+                final assignedDays = templateProvider.dayAssignment.entries
                     .where((e) => e.value == template.id)
                     .map((e) => AppValues.weekdayLabels[e.key]!)
                     .toList();
@@ -131,7 +131,7 @@ class TemplateListScreen extends StatelessWidget {
       ),
     );
     if (confirmed == true && context.mounted) {
-      await context.read<PlanProvider>().deleteTemplate(template.id);
+      await context.read<TemplateProvider>().deleteTemplate(template.id);
     }
   }
 }

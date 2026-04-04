@@ -9,11 +9,13 @@ import 'package:papetune/models/daily_plan.dart';
 import 'package:papetune/models/plan_task.dart';
 import 'package:papetune/models/plan_template.dart';
 import 'package:papetune/providers/plan_provider.dart';
+import 'package:papetune/providers/template_provider.dart';
 import 'package:papetune/services/storage_service.dart';
 import 'package:shared_preferences/shared_preferences.dart';
 
 void main() {
   late StorageService storage;
+  late TemplateProvider templateProvider;
   late PlanProvider provider;
   late DadProfile profile;
 
@@ -21,7 +23,8 @@ void main() {
     SharedPreferences.setMockInitialValues({});
     final prefs = await SharedPreferences.getInstance();
     storage = StorageService(prefs);
-    provider = PlanProvider(storage);
+    templateProvider = TemplateProvider(storage);
+    provider = PlanProvider(storage, templateProvider);
     profile = DadProfile(
       children: [
         ChildProfile(name: 'テスト太郎', birthDate: DateTime(2023, 1, 1)),
@@ -145,20 +148,21 @@ void main() {
       );
     });
 
-    test('addTemplate persists template', () async {
+    test('addTemplate persists template via TemplateProvider', () async {
       final template = PlanTemplate.fromTitles(
           name: '平日', titles: ['タスク1', 'タスク2']);
-      await provider.addTemplate(template);
-      expect(provider.templates.length, 1);
-      expect(provider.templates.first.name, '平日');
+      await templateProvider.addTemplate(template);
+      expect(templateProvider.templates.length, 1);
+      expect(templateProvider.templates.first.name, '平日');
     });
 
-    test('saveDayAssignment persists assignment', () async {
+    test('saveDayAssignment persists assignment via TemplateProvider',
+        () async {
       final template =
           PlanTemplate.fromTitles(name: '平日', titles: ['タスク1']);
-      await provider.addTemplate(template);
-      await provider.saveDayAssignment({1: template.id});
-      expect(provider.dayAssignment[1], template.id);
+      await templateProvider.addTemplate(template);
+      await templateProvider.saveDayAssignment({1: template.id});
+      expect(templateProvider.dayAssignment[1], template.id);
     });
   });
 }

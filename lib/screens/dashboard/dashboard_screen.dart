@@ -3,10 +3,7 @@ import 'package:provider/provider.dart';
 
 import '../../enums/disruption_type.dart';
 import '../../models/disruption_log.dart';
-import '../../providers/condition_provider.dart';
 import '../../providers/disruption_provider.dart';
-import '../../providers/plan_provider.dart';
-import '../../providers/profile_provider.dart';
 import 'pages/dashboard_home_page.dart';
 import 'pages/review_page.dart';
 import 'pages/settings_page.dart';
@@ -54,20 +51,6 @@ class _DashboardScreenState extends State<DashboardScreen> {
 
   @override
   Widget build(BuildContext context) {
-    // ConditionProvider は ProxyProvider 経由で DisruptionProvider の
-    // 変更を自動検知するため、watch するだけでリアクティブに更新される
-    final profile = context.watch<ProfileProvider>().profile;
-    final condition = context.watch<ConditionProvider>().score;
-
-    if (profile != null) {
-      // build 内で他 Provider の状態を変更するため、
-      // フレーム終了後に実行して無限ループを防ぐ
-      WidgetsBinding.instance.addPostFrameCallback((_) {
-        if (!mounted) return;
-        context.read<PlanProvider>().generateTodayPlan(profile, condition);
-      });
-    }
-
     return Scaffold(
       body: IndexedStack(
         index: _currentIndex,
@@ -85,7 +68,8 @@ class _DashboardScreenState extends State<DashboardScreen> {
         onDestinationSelected: (i) => setState(() => _currentIndex = i),
         destinations: const [
           NavigationDestination(icon: Icon(Icons.dashboard), label: '今日'),
-          NavigationDestination(icon: Icon(Icons.calendar_month), label: '記録'),
+          NavigationDestination(
+              icon: Icon(Icons.calendar_month), label: '記録'),
           NavigationDestination(icon: Icon(Icons.settings), label: '設定'),
         ],
       ),
