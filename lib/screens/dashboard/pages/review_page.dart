@@ -1,190 +1,183 @@
 import 'package:flutter/material.dart';
+import 'package:intl/intl.dart';
 import 'package:provider/provider.dart';
+import 'package:table_calendar/table_calendar.dart';
 
-import '../../../constants/app_values.dart';
-import '../../../enums/plan_mode.dart';
-import '../../../providers/disruption_provider.dart';
+import '../../../models/daily_plan.dart';
 import '../../../providers/plan_provider.dart';
-import '../widgets/stat_row.dart';
 
-class ReviewPage extends StatelessWidget {
+class ReviewPage extends StatefulWidget {
   const ReviewPage({super.key});
+
+  @override
+  State<ReviewPage> createState() => _ReviewPageState();
+}
+
+class _ReviewPageState extends State<ReviewPage> {
+  DateTime _focusedDay = DateTime.now();
+  DateTime _selectedDay = DateTime.now();
+  CalendarFormat _calendarFormat = CalendarFormat.month;
 
   @override
   Widget build(BuildContext context) {
     final theme = Theme.of(context);
-    final plans =
-        context.watch<PlanProvider>().plansForLastNDays(AppValues.reviewPeriodDays);
-    final disruptions = context.watch<DisruptionProvider>();
-
-    final last7dDisruptions = disruptions.logsForDateRange(
-      DateTime.now().subtract(
-          const Duration(days: AppValues.reviewPeriodDays)),
-      DateTime.now(),
-    );
-
-    final daysWithPlans = plans.length;
-    final daysAdapted =
-        plans.where((p) => p.mode != PlanMode.planA).length;
-    final adaptabilityScore = daysWithPlans > 0
-        ? ((daysWithPlans / AppValues.reviewPeriodDays) * 100).round()
-        : 0;
+    final planProvider = context.watch<PlanProvider>();
+    final selectedPlan = planProvider.getPlanForDate(_selectedDay);
+    final plans = planProvider.plans;
 
     return SafeArea(
-      child: ListView(
-        padding: const EdgeInsets.all(16),
+      child: Column(
         children: [
-          Text('週次レビュー', style: theme.textTheme.headlineMedium),
-          const SizedBox(height: 16),
-          _AdaptabilityScoreCard(
-            score: adaptabilityScore,
-            daysWithPlans: daysWithPlans,
+          Padding(
+            padding: const EdgeInsets.fromLTRB(16, 8, 16, 0),
+            child: Text('記録', style: theme.textTheme.headlineMedium),
           ),
-          const SizedBox(height: 12),
-          _WeeklySummaryCard(
-            disruptionCount: last7dDisruptions.length,
-            daysAdapted: daysAdapted,
-            daysWithPlans: daysWithPlans,
+          TableCalendar<DailyPlan>(
+            firstDay: DateTime.now().subtract(const Duration(days: 365)),
+            lastDay: DateTime.now(),
+            focusedDay: _focusedDay,
+            selectedDayPredicate: (day) => isSameDay(day, _selectedDay),
+            calendarFormat: _calendarFormat,
+            onFormatChanged: (format) =>
+                setState(() => _calendarFormat = format),
+            onDaySelected: (selected, focused) {
+              setState(() {
+                _selectedDay = selected;
+                _focusedDay = focused;
+              });
+            },
+            eventLoader: (day) {
+              final plan = plans[_dateKey(day)];
+              return plan != null ? [plan] : [];
+            },
+            calendarStyle: CalendarStyle(
+              markerDecoration: BoxDecoration(
+                color: theme.colorScheme.primary,
+                shape: BoxShape.circle,
+              ),
+              markerSize: 6,
+              markersMaxCount: 1,
+              todayDecoration: BoxDecoration(
+                color: theme.colorScheme.primaryContainer,
+                shape: BoxShape.circle,
+              ),
+              selectedDecoration: BoxDecoration(
+                color: theme.colorScheme.primary,
+                shape: BoxShape.circle,
+              ),
+            ),
+            headerStyle: const HeaderStyle(
+              formatButtonShowsNext: false,
+              titleCentered: true,
+            ),
+            locale: 'ja_JP',
+            startingDayOfWeek: StartingDayOfWeek.monday,
           ),
-          const SizedBox(height: 12),
-          if (plans.isNotEmpty) _PlanModeHistoryCard(plans: plans),
-          const SizedBox(height: 16),
-          _FeedbackCard(daysAdapted: daysAdapted),
+          const Divider(height: 1),
+          Expanded(
+            child: selectedPlan != null
+                ? _DayPlanDetail(
+                    plan: selectedPlan,
+                    date: _selectedDay,
+                  )
+                : Center(
+                    child: Text(
+                      '${DateFormat('M/d (E)', 'ja_JP').format(_selectedDay)} の記録はありません',
+                      style: theme.textTheme.bodyLarge?.copyWith(
+                        color: theme.colorScheme.onSurfaceVariant,
+                      ),
+                    ),
+                  ),
+          ),
         ],
       ),
     );
   }
+
+  String _dateKey(DateTime day) {
+    return '${day.year}-${day.month.toString().padLeft(2, '0')}-${day.day.toString().padLeft(2, '0')}';
+  }
 }
 
-class _AdaptabilityScoreCard extends StatelessWidget {
-  final int score;
-  final int daysWithPlans;
-  const _AdaptabilityScoreCard({
-    required this.score,
-    required this.daysWithPlans,
-  });
+class _DayPlanDetail extends StatelessWidget {
+  final DailyPlan plan;
+  final DateTime date;
+
+  const _DayPlanDetail({required this.plan, required this.date});
 
   @override
   Widget build(BuildContext context) {
     final theme = Theme.of(context);
-    return Card(
-      child: Padding(
-        padding: const EdgeInsets.all(20),
-        child: Column(
+    final dateLabel = DateFormat('M/d (E)', 'ja_JP').format(date);
+
+    return ListView(
+      padding: const EdgeInsets.all(16),
+      children: [
+        Row(
           children: [
-            Text('適応力スコア', style: theme.textTheme.titleLarge),
-            const SizedBox(height: 12),
-            Text(
-              '$score%',
-              style: theme.textTheme.headlineLarge?.copyWith(
-                color: theme.colorScheme.primary,
-                fontWeight: FontWeight.bold,
+            Text(dateLabel, style: theme.textTheme.titleMedium),
+            const SizedBox(width: 8),
+            Container(
+              padding: const EdgeInsets.symmetric(horizontal: 8, vertical: 2),
+              decoration: BoxDecoration(
+                color: plan.mode.color.withAlpha(30),
+                borderRadius: BorderRadius.circular(8),
+              ),
+              child: Text(
+                plan.mode.description,
+                style: theme.textTheme.labelSmall?.copyWith(
+                  color: plan.mode.color,
+                ),
               ),
             ),
-            const SizedBox(height: 8),
-            Text('過去${AppValues.reviewPeriodDays}日間のうち $daysWithPlans 日プランを実行'),
+            const Spacer(),
+            Text(
+              '${plan.completedCount} / ${plan.totalCount}',
+              style: theme.textTheme.bodyMedium?.copyWith(
+                color: theme.colorScheme.onSurfaceVariant,
+              ),
+            ),
           ],
         ),
-      ),
-    );
-  }
-}
-
-class _WeeklySummaryCard extends StatelessWidget {
-  final int disruptionCount;
-  final int daysAdapted;
-  final int daysWithPlans;
-  const _WeeklySummaryCard({
-    required this.disruptionCount,
-    required this.daysAdapted,
-    required this.daysWithPlans,
-  });
-
-  @override
-  Widget build(BuildContext context) {
-    final theme = Theme.of(context);
-    return Card(
-      child: Padding(
-        padding: const EdgeInsets.all(20),
-        child: Column(
-          crossAxisAlignment: CrossAxisAlignment.start,
-          children: [
-            Text('今週のサマリー', style: theme.textTheme.titleLarge),
-            const SizedBox(height: 12),
-            StatRow(label: 'イレギュラー発生', value: '$disruptionCount回'),
-            StatRow(label: 'プラン切替（適応）', value: '$daysAdapted日'),
-            StatRow(
-                label: '記録日数',
-                value: '$daysWithPlans / ${AppValues.reviewPeriodDays}日'),
-          ],
+        const SizedBox(height: 8),
+        LinearProgressIndicator(
+          value:
+              plan.totalCount > 0 ? plan.completedCount / plan.totalCount : 0,
+          borderRadius: BorderRadius.circular(4),
         ),
-      ),
-    );
-  }
-}
-
-class _PlanModeHistoryCard extends StatelessWidget {
-  final List plans;
-  const _PlanModeHistoryCard({required this.plans});
-
-  @override
-  Widget build(BuildContext context) {
-    final theme = Theme.of(context);
-    return Card(
-      child: Padding(
-        padding: const EdgeInsets.all(20),
-        child: Column(
-          crossAxisAlignment: CrossAxisAlignment.start,
-          children: [
-            Text('日別プランモード', style: theme.textTheme.titleLarge),
-            const SizedBox(height: 12),
-            ...plans.map((p) {
-              return Padding(
-                padding: const EdgeInsets.symmetric(vertical: 4),
-                child: Row(
-                  children: [
-                    Container(
-                      width: 12,
-                      height: 12,
-                      decoration: BoxDecoration(
-                        color: p.mode.color,
-                        shape: BoxShape.circle,
-                      ),
-                    ),
-                    const SizedBox(width: 8),
-                    Text(p.dateKey),
-                    const SizedBox(width: 8),
-                    Text(p.mode.description,
-                        style: TextStyle(color: p.mode.color)),
-                  ],
-                ),
-              );
-            }),
-          ],
-        ),
-      ),
-    );
-  }
-}
-
-class _FeedbackCard extends StatelessWidget {
-  final int daysAdapted;
-  const _FeedbackCard({required this.daysAdapted});
-
-  @override
-  Widget build(BuildContext context) {
-    final theme = Theme.of(context);
-    return Card(
-      color: theme.colorScheme.primaryContainer,
-      child: Padding(
-        padding: const EdgeInsets.all(20),
-        child: Text(
-          daysAdapted > 0
-              ? '今週は$daysAdapted日プランを柔軟に切り替えました。予定が崩れても適応できるあなたの姿勢は、お子さんにとって最高のお手本です！'
-              : '今週は順調な1週間でした！余裕がある時こそ自分への投資を忘れずに。',
-          style: theme.textTheme.bodyLarge,
-        ),
-      ),
+        const SizedBox(height: 12),
+        ...plan.tasks.map((task) {
+          return ListTile(
+            dense: true,
+            leading: Checkbox(
+              value: task.isDone,
+              onChanged: (_) {
+                context
+                    .read<PlanProvider>()
+                    .toggleTaskForDate(date, task.id);
+              },
+            ),
+            title: Text(
+              task.title,
+              style: TextStyle(
+                decoration: task.isDone ? TextDecoration.lineThrough : null,
+                color: task.isDone
+                    ? theme.colorScheme.onSurfaceVariant
+                    : null,
+              ),
+            ),
+            subtitle: task.timeSlot != null ? Text(task.timeSlot!) : null,
+            trailing: task.isOptional
+                ? Chip(
+                    label: const Text('任意'),
+                    labelStyle: theme.textTheme.labelSmall,
+                    padding: EdgeInsets.zero,
+                    visualDensity: VisualDensity.compact,
+                  )
+                : null,
+          );
+        }),
+      ],
     );
   }
 }

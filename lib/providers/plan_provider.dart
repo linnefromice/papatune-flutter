@@ -122,6 +122,34 @@ class PlanProvider extends ChangeNotifier {
     notifyListeners();
   }
 
+  DailyPlan? getPlanForDate(DateTime date) {
+    return _plans[date.toDateKey()];
+  }
+
+  bool hasPlanForDate(DateTime date) {
+    return _plans.containsKey(date.toDateKey());
+  }
+
+  void toggleTaskForDate(DateTime date, String taskId) {
+    final key = date.toDateKey();
+    final plan = _plans[key];
+    if (plan == null) return;
+    final idx = plan.tasks.indexWhere((t) => t.id == taskId);
+    if (idx == -1) return;
+    final updatedTasks = List<PlanTask>.from(plan.tasks);
+    updatedTasks[idx] = updatedTasks[idx].copyWith(
+      isDone: !updatedTasks[idx].isDone,
+    );
+    final updated = plan.copyWithTasks(updatedTasks);
+    _plans[key] = updated;
+    // 今日のプランと同じ日ならtodayPlanも更新
+    if (_todayPlan != null && _todayPlan!.dateKey == key) {
+      _todayPlan = updated;
+    }
+    _storage.savePlans(_plans);
+    notifyListeners();
+  }
+
   List<DailyPlan> plansForLastNDays(int n) {
     final now = DateTime.now();
     final result = <DailyPlan>[];
